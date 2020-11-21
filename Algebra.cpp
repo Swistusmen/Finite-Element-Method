@@ -262,6 +262,49 @@ Matrix4d* Matrix4d::operator*= ( double mul)
 	return this;
 }
 
+///////////////////////////////MatrixXd
+MatrixXd::MatrixXd(int size)
+{
+	if (size <= 0)
+		throw new std::exception("Dimension of matrix has to be positive number");
+	this->size = size;
+	this->tab = new double*[this->size];
+	for (size_t i = 0; i < size; i++)
+	{
+		this->tab[i] = new double[size] {0};
+	}
+}
+
+std::ostream& operator<< (std::ostream& os, MatrixXd& mat)
+{
+	const size_t size = mat.getSize();
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < size; j++)
+		{
+			os << mat(i, j) << " ";
+		}
+		os << "\n";
+	}
+	return os;
+}
+
+double& MatrixXd::operator() (int x, int y)
+{
+	if ((x < 0) || (y < 0) || (x >= this->size) || (y >= this->size))
+	{
+		throw new std::exception("There is no such a cell in this matrix, coordinates are wrong");
+	}
+	//if (this->tab == nullptr)
+	//	throw new std::exception("Uninitialized");
+	return this->tab[x][y];
+}
+
+int MatrixXd::getSize()
+{
+	return this->size;
+}
+
 /////////////////////////////// Vector2d
 Vector2d::Vector2d()
 {

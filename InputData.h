@@ -15,4 +15,8 @@ namespace data {
 		double tabWage[4] = { 1,1,1,1 };
 	};
 
+	struct RectangleMeshInput {
+		int nH, nW;
+		double H, W;
+	};
 }

@@ -4,6 +4,7 @@
 #include <utility>
 #include <cmath>
 #include <vector>
+#include <array>
 
 Matrix4d& slv::Solver::getEtaMatrixG2()
 {
@@ -40,6 +41,7 @@ Matrix4d& slv::Solver::getKsiMatrixG2()
 Matrix2d& slv::Solver::getJacobyMatrix2(Matrix4d& eta, Matrix4d& ksi, double* x, double* y, int point)
 {
 	auto matrix = new Matrix2d();
+	
 	for (int i = 0; i < 4; i++)
 		matrix->operator()(0, 0) += x[i] * ksi(point, i);
 	for (int i = 0; i < 4; i++)
@@ -48,6 +50,7 @@ Matrix2d& slv::Solver::getJacobyMatrix2(Matrix4d& eta, Matrix4d& ksi, double* x,
 		matrix->operator()(1, 0) += x[i] * eta(point, i);
 	for (int i = 0; i < 4; i++)
 		matrix->operator()(1, 1) += y[i] * eta(point, i);
+
 	return *matrix;
 }
 
@@ -94,6 +97,7 @@ Matrix4d* slv::Solver::getHSumbatricies(Matrix4d& eta, Matrix4d& ksi, Matrix2d& 
 Matrix4d* slv::Solver::getHMatrix(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, double k)
 {
 	double detJ = jacoby.determinant();
+
 	Matrix4d* H = new Matrix4d();
 	for (int i = 0; i < 4; i++)
 	{
@@ -102,4 +106,22 @@ Matrix4d* slv::Solver::getHMatrix(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby
 		(*H) += buffer;
 	}
 	return H;
+}
+
+void slv::Solver::aggregateGlobalMatrix(MatrixXd& mat, std::vector<Matrix4d*>& locals, std::vector<std::array<int, 4>>& nodes)
+{
+	const size_t numberOfLocals = locals.size();
+	std::cout << numberOfLocals << std::endl;
+	for (size_t i = 0; i < numberOfLocals; i++)
+	{
+		auto& cur = *locals[i];
+		std::array<int,4>& curNo = nodes[i];
+		for (int j = 0; j < 4; j++)
+		{
+			for (int c = 0; c < 4; c++)
+			{
+				mat(curNo.at(j)-1, curNo.at(c)-1) += cur(j, c);
+			}
+		}
+	}
 }

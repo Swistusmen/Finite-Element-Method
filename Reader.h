@@ -24,27 +24,20 @@ namespace fs {
 			return points;
 	}
 
-	data::Element* readRectangleElementsFromFile(std::string filepath)
+	data::RectangleMeshInput& readRectangleMeshInput(std::string&& file)
 	{
-		auto points = readTable(filepath);
-		const int size = points->size / 4;
-		data::Element* elements = new data::Element[size];
-		int pIterator = 0;
-		double tabX[4], tabY[4];
-		for (int i = 0; i < size; i++)
+		std::ifstream reader(std::move(file));
+		data::RectangleMeshInput mesh;
+		if (reader.is_open())
 		{
-			int a = 0;
-			while (a < 4)
-			{
-				tabX[a] = points->x[pIterator];
-				tabY[a] = points->y[pIterator];
-				a++;
-				pIterator++;
-			}
-			elements[i] = data::Element(tabX, tabY);
+			reader >> mesh.nH;
+			reader >> mesh.nW;
+			reader >> mesh.H;
+			reader >> mesh.W;
+
+			return mesh;
 		}
-		std::cout << std::endl;
-		return elements;
+		throw new std::exception("Error in reading from file");
 	}
 
 }

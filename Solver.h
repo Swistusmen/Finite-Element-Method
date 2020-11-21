@@ -7,15 +7,6 @@
 #include "Algebra.h"
 
 namespace slv {
-	using mat4U = std::unique_ptr<Matrix4d>;
-	using mat4S = std::shared_ptr<Matrix4d>;
-	using mat2U = std::unique_ptr<Matrix2d>;
-	using mat2S = std::shared_ptr<Matrix2d>;
-	using vec4U = std::unique_ptr<Vector4d>;
-	using vec4S = std::shared_ptr<Vector4d>;
-	using vec2U = std::unique_ptr<Vector2d>;
-	using vec2S = std::shared_ptr<Vector2d>;
-
 	class Solver {
 	public:
 		Matrix4d& getEtaMatrixG2();
@@ -29,6 +20,8 @@ namespace slv {
 		
 		Matrix4d* getHSumbatricies(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, int point);
 		Matrix4d* getHMatrix(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, double k);
+		
+		void aggregateGlobalMatrix(MatrixXd& mat, std::vector<Matrix4d*>& locals, std::vector<std::array<int, 4>>& nodes);
 	};
 
 }

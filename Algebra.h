@@ -43,6 +43,19 @@ private:
 	double **tab;
 };
 
+class MatrixXd
+{
+public:
+	MatrixXd(int size);
+	friend std::ostream& operator<< (std::ostream& os, MatrixXd& mat);
+	double& operator() (int x, int y);
+
+	int getSize();
+private:
+	double**tab;
+	int size;
+};
+
 class Vector2d {
 public:
 	Vector2d();
