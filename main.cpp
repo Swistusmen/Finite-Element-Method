@@ -8,6 +8,7 @@
 #include <memory>
 #include "Algebra.h"
 #include <array>
+#include <cmath>
 
 //TODO: implement RAII
 //TODO: make code more elegant
@@ -20,9 +21,16 @@ int main()
 	auto data = fs::readRectangleMeshInput("a.txt");
 	data::RectangleMesh mesh(data);
 	
+	int numberOfIntegrationalPoints = 3;
+
 	slv::Solver solver;
-	Matrix4d eta = solver.getEtaMatrixG2();
-	Matrix4d ksi = solver.getKsiMatrixG2();
+	MatrixXd eta = solver.getEtaMatrixG2(std::pow(numberOfIntegrationalPoints,2));
+	MatrixXd ksi = solver.getKsiMatrixG2(std::pow(numberOfIntegrationalPoints, 2));
+	std::cout << eta << std::endl;
+	std::cout << ksi << std::endl;
+
+	/*
+	MatrixXd ksi = solver.getKsiMatrixG2(std::pow(numberOfIntegrationalPoints,2));
 	const int size = mesh.maxIndexOfElement();
 	std::cout << eta << std::endl;
 	std::cout << ksi << std::endl;
@@ -35,24 +43,13 @@ int main()
 		localMatricies.push_back(solver.getHMatrix(eta, ksi, jacoby, 25));
 		nodes.push_back(mesh.getElementNodesIndexes(i));
 	}
-	for (int i = 0; i < 9; i++)
-	{
-		//std::cout << *localMatricies[i] << std::endl;
-	}
+	
 	int sizeOfGlobalMAtrix = mesh.getNH()*mesh.getNW();
 	MatrixXd globalMat(sizeOfGlobalMAtrix);
 	solver.aggregateGlobalMatrix(globalMat, localMatricies, nodes);
 	std::cout << globalMat << std::endl;
 
 	
-	/*
-	MatrixXd mat(9);
-	std::cout << mat << std::endl;
-	
-	mat(3, 4) = 1.5;
-	mat(5, 1) = 3.4;
-	mat(7, 5) = 3.14;
-	std::cout << mat << std::endl;
 	*/
 	system("pause");
 	return 0;

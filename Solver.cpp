@@ -6,39 +6,87 @@
 #include <vector>
 #include <array>
 
-Matrix4d& slv::Solver::getEtaMatrixG2()
+MatrixXd& slv::Solver::getEtaMatrixG2(int size)
 {
-	double ksi = 1 / sqrt(3);
-	Matrix4d* matrix = new Matrix4d();
-
-	for (int i = 0; i < 4; i++)
+	auto matrix = new MatrixXd(size);
+	if (size == 4) 
 	{
-		ksi *= -1;
-		matrix->operator()(i, 0) = (ksi - 1) / 4;
-		matrix->operator()(i, 1) = (-ksi - 1) / 4;
-		matrix->operator()(i, 2) = (ksi + 1) / 4;
-		matrix->operator()(i, 3) = (-ksi + 1) / 4;
+		double ksi = 1 / sqrt(3);
+		for (int i = 0; i < 4; i++)
+		{
+			ksi *= -1;
+			matrix->operator()(i, 0) = (ksi - 1) / 4;
+			matrix->operator()(i, 1) = (-ksi - 1) / 4;
+			matrix->operator()(i, 2) = (ksi + 1) / 4;
+			matrix->operator()(i, 3) = (-ksi + 1) / 4;
+		}
+		return *matrix;
 	}
+	else if (size == 9)
+	{
+		double ksi =  -0.7746;
+		for (int i = 0; i < 9; i++)
+		{
+			ksi *= -1;
+			matrix->operator()(i, 0) =  (-ksi - 1) / 4;
+			matrix->operator()(i, 1) = (-ksi - 1) / 4;
+			matrix->operator()(i, 2) = (-ksi - 1) / 4;
+			matrix->operator()(i, 3) = 1/4; 
+			matrix->operator()(i, 4) = 1/4;
+			matrix->operator()(i, 5) =  1/4;
+			matrix->operator()(i, 6) =  (ksi - 1) / 4;
+			matrix->operator()(i, 7) = (ksi - 1) / 4;
+			matrix->operator()(i, 8) = (ksi - 1) / 4;
+		}
+		return *matrix;
+	}
+	else if (size == 16)
+	{
 
-	return *matrix;
+	}
 }
 
-Matrix4d& slv::Solver::getKsiMatrixG2()
+MatrixXd& slv::Solver::getKsiMatrixG2(int size)
 {
-	double eta = 1 / sqrt(3);
-	auto *matrix = new Matrix4d();
-	for (int i = 0; i < 4; i++)
+	auto *matrix = new MatrixXd(size);
+	if (size == 4)
 	{
-		eta *= -1;
-		matrix->operator()(i, 0) = (eta - 1) / 4;
-		matrix->operator()(i, 1) = (-eta + 1) / 4;
-		matrix->operator()(i, 2) = (eta + 1) / 4;
-		matrix->operator()(i, 3) = (-eta - 1) / 4;
+		double eta = 1 / sqrt(3);
+		for (int i = 0; i < 4; i++)
+		{
+			eta *= -1;
+			matrix->operator()(i, 0) = (eta - 1) / 4;
+			matrix->operator()(i, 1) = (-eta + 1) / 4;
+			matrix->operator()(i, 2) = (eta + 1) / 4;
+			matrix->operator()(i, 3) = (-eta - 1) / 4;
+		}
+		return *matrix;
 	}
-	return *matrix;
+	else if (size == 9)
+	{
+		double eta = -0.7746;
+		for (int i = 0; i < 9; i++)
+		{
+			eta *= -1;
+			matrix->operator()(i, 0) = (-eta - 1) / 4;
+			matrix->operator()(i, 1) = 1 / 4;
+			matrix->operator()(i, 2) = (eta - 1) / 4;
+			matrix->operator()(i, 3) = (-eta - 1) / 4;
+			matrix->operator()(i, 4) = 1 / 4;
+			matrix->operator()(i, 5) = (eta - 1) / 4;
+			matrix->operator()(i, 6) = (-eta - 1) / 4;
+			matrix->operator()(i, 7) = 1 / 4;
+			matrix->operator()(i, 8) = (eta - 1) / 4;
+		}
+		return *matrix;
+	}
+	else if (size == 16)
+	{
+
+	}
 }
 
-Matrix2d& slv::Solver::getJacobyMatrix2(Matrix4d& eta, Matrix4d& ksi, double* x, double* y, int point)
+Matrix2d& slv::Solver::getJacobyMatrix2(MatrixXd& eta, MatrixXd& ksi, double* x, double* y, int point)
 {
 	auto matrix = new Matrix2d();
 	
@@ -62,7 +110,7 @@ Vector2d& slv::Solver::getDerivativeOfNByCoordinate_XY(Matrix2d& inversedJacoby,
 	return *vec; 
 }
 
-Vector2d& slv::Solver::getVectorOfDerivatives(Matrix4d& ksi, Matrix4d& eta, int fShape, int point)
+Vector2d& slv::Solver::getVectorOfDerivatives(MatrixXd& ksi, MatrixXd& eta, int fShape, int point)
 {
 	auto vec = new Vector2d();
 	vec->operator()(0) = ksi(point, fShape);
@@ -70,7 +118,7 @@ Vector2d& slv::Solver::getVectorOfDerivatives(Matrix4d& ksi, Matrix4d& eta, int 
 	return *vec;
 }
 
-Vector4d* slv::Solver::getXYDerivativesForPoint(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, int point)
+Vector4d* slv::Solver::getXYDerivativesForPoint(MatrixXd& eta, MatrixXd& ksi, Matrix2d& jacoby, int point)
 {
 	Vector4d* xy = new Vector4d[2];
 	for (int i = 0; i < 4; i++)
@@ -84,7 +132,7 @@ Vector4d* slv::Solver::getXYDerivativesForPoint(Matrix4d& eta, Matrix4d& ksi, Ma
 }
 
 
-Matrix4d* slv::Solver::getHSumbatricies(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, int point)
+Matrix4d* slv::Solver::getHSumbatricies(MatrixXd& eta, MatrixXd& ksi, Matrix2d& jacoby, int point)
 {
 	auto result = getXYDerivativesForPoint(eta, ksi, jacoby, point);
 	Matrix4d* H1 = new Matrix4d(vecAndvecTMultiplication(result[0]));
@@ -94,7 +142,7 @@ Matrix4d* slv::Solver::getHSumbatricies(Matrix4d& eta, Matrix4d& ksi, Matrix2d& 
 	return a;
 }
 
-Matrix4d* slv::Solver::getHMatrix(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, double k)
+Matrix4d* slv::Solver::getHMatrix(MatrixXd& eta, MatrixXd& ksi, Matrix2d& jacoby, double k)
 {
 	double detJ = jacoby.determinant();
 

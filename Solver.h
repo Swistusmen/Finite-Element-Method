@@ -9,17 +9,17 @@
 namespace slv {
 	class Solver {
 	public:
-		Matrix4d& getEtaMatrixG2();
-		Matrix4d& getKsiMatrixG2();
+		MatrixXd& getEtaMatrixG2(int size);
+		MatrixXd& getKsiMatrixG2(int size);
 
-		Matrix2d& getJacobyMatrix2(Matrix4d& eta, Matrix4d& ksi, double* x, double* y, int point);
-		Vector2d& getVectorOfDerivatives(Matrix4d& ksi, Matrix4d& eta, int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
+		Matrix2d& getJacobyMatrix2(MatrixXd& eta, MatrixXd& ksi, double* x, double* y, int point);
+		Vector2d& getVectorOfDerivatives(MatrixXd& ksi, MatrixXd& eta, int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
 
 		Vector2d& getDerivativeOfNByCoordinate_XY(Matrix2d& inversedJacoby, double detJ, Vector2d& derivatives); //derivate of shape funciton and cooridnate
-		Vector4d* getXYDerivativesForPoint(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, int point);
+		Vector4d* getXYDerivativesForPoint(MatrixXd& eta, MatrixXd& ksi, Matrix2d& jacoby, int point);
 		
-		Matrix4d* getHSumbatricies(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, int point);
-		Matrix4d* getHMatrix(Matrix4d& eta, Matrix4d& ksi, Matrix2d& jacoby, double k);
+		Matrix4d* getHSumbatricies(MatrixXd& eta, MatrixXd& ksi, Matrix2d& jacoby, int point);
+		Matrix4d* getHMatrix(MatrixXd& eta, MatrixXd& ksi, Matrix2d& jacoby, double k);
 		
 		void aggregateGlobalMatrix(MatrixXd& mat, std::vector<Matrix4d*>& locals, std::vector<std::array<int, 4>>& nodes);
 	};
