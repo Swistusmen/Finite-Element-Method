@@ -1,45 +1,121 @@
 #include <iostream>
 #include "Algebra.h"
 
-//Matrix2d
-Matrix2d::Matrix2d()
+Matrix::Matrix(int size, int size2)
 {
-	this->tab = new double*[2];
-	tab[0] = new double;
-	tab[1] = new double;
-	for (int i = 0; i < 2; i++)
-		for (int j = 0; j < 2; j++)
-			tab[i][j] = 0;
-}
-
-Matrix2d::Matrix2d(Matrix2d& mat)
-{
-	this->tab = new double*[2];
-	tab[0] = new double;
-	tab[1] = new double;
-	for(int i=0;i<2;i++)
-		for (int j = 0; j < 2; j++)
+	if (size <= 0 || size2 < 0)
+		throw new std::exception("Matrix constructor error");
+	if (size2 == 0)
+		size2 = size;
+	this->sizeH = size;
+	this->sizeW = size2 == 0 ? size : size2;
+	this->tab = new double*[this->sizeH];
+	for (int i = 0; i < this->sizeH; i++)
+	{
+		this->tab[i] = new double[this->sizeW];
+		for (int j = 0; j < this->sizeW; j++)
 		{
-			tab[i][j] = mat(i, j);
+			this->tab[i][j] = 0.0;
 		}
+	}
 }
 
-Matrix2d::Matrix2d(double* tab1)
+Matrix::Matrix(Matrix& mat)
 {
-	this->tab = new double*[2];
-	tab[0] = new double;
-	tab[1] = new double;
-	int c = 0;
-	for (int i = 0; i < 2; i++)
-		for (int j = 0; j < 2; j++,c++)
-			tab[i][j] = tab1[c];
+	auto size = mat.getSize();
+	this->sizeH = size.first;
+	this->sizeW = size.second;
+	this->tab = new double*[this->sizeH];
+	for (int i = 0; i < this->sizeH; i++)
+	{
+		this->tab[i] = new double[this->sizeW];
+		for (int j = 0; j < this->sizeW; j++)
+		{
+			this->tab[i][j] = mat(i,j);
+		}
+	}
 }
 
-double& Matrix2d::operator() (int x, int y)
+Matrix::Matrix(double* table, const std::pair<int, int> size)
 {
-	return tab[x][y];
+	if (size.first <= 0 || size.second <= 0)
+		throw std::exception("Wrong size of table");
+	if (table == nullptr)
+		throw std::exception("Initializaing table is empty");
+	this->sizeH = size.first;
+	this->sizeW = size.second;
+	this->tab = new double*[this->sizeH];
+	int iterator = 0;
+	for (size_t i = 0; i < this->sizeH; i++)
+	{
+		this->tab[i] = new double[this->sizeW];
+		for (size_t j = 0; j < this->sizeW; j++)
+		{
+			this->tab[i][j] = std::move(table[iterator]);
+			iterator++;
+		}
+	}
 }
 
+std::pair<int, int> Matrix::getSize()
+{
+	return std::make_pair(this->sizeH,this->sizeW);
+}
+
+double& Matrix::operator()(int x, int y)
+{
+	if (x < 0 || x > (this->sizeH - 1) || y < 0 || y > (this->sizeW - 1))
+		throw new std::exception("Wrong index in () matrix operator");
+	return this->tab[x][y];
+}
+
+std::ostream& operator<< (std::ostream& os, Matrix& mat)
+{
+	auto size = mat.getSize();
+	for (int i = 0; i < size.first; i++)
+	{
+		for (int j = 0; j < size.second; j++)
+		{
+			os << mat(i,j) << " ";
+		}
+		os << std::endl;
+	}
+	return os;
+}
+
+Matrix& operator/ (Matrix& mat, double scalar)
+{
+	if (scalar == 0)
+		throw std::exception("Dividing matix by 0\n");
+	auto size = mat.getSize();
+	const size_t h = size.first;
+	const size_t w = size.second;
+	for (size_t i = 0; i < h; i++)
+	{
+		for (size_t j = 0; j < w; j++)
+		{
+			mat(i, j) /= scalar;
+		}
+	}
+	return mat;
+}
+
+Matrix& operator+ (Matrix& mat, double scalar)
+{
+	auto size = mat.getSize();
+	const size_t h = size.first;
+	const size_t w = size.second;
+	for (size_t i = 0; i < h; i++)
+	{
+		for (size_t j = 0; j < w; j++)
+		{
+			mat(i, j) += scalar;
+		}
+	}
+	return mat;
+}
+
+//Matrix2d
 Matrix2d& operator+ (Matrix2d& mat, Matrix2d& tab)
 {
 	Matrix2d* matrix = new Matrix2d();
@@ -47,17 +123,6 @@ Matrix2d& operator+ (Matrix2d& mat, Matrix2d& tab)
 		for (int j = 0; j < 2; j++)
 		{
 			matrix->operator()(i, j) = tab.operator()(i, j) + mat.operator()(i, j);
-		}
-	return *matrix;
-}
-
-Matrix2d& Matrix2d::operator= (Matrix2d& mat)
-{
-	Matrix2d *matrix = new Matrix2d();
-	for (int i = 0; i<2; i++)
-		for (int j = 0; j < 2; j++)
-		{
-			matrix->operator()(i, j) =  mat.operator()(i, j);
 		}
 	return *matrix;
 }
@@ -75,32 +140,6 @@ Matrix2d& operator* (Matrix2d& mat, Matrix2d& mat1)
 		}
 	}
 	return *result;
-}
-
-std::ostream& operator<< (std::ostream& os, Matrix2d& mat)
-{
-	for (int i = 0; i < 2; i++)
-	{
-		for (int j = 0; j < 2; j++)
-		{
-			os << mat(i, j) << " ";
-		}
-		os << "\n";
-	}
-	return os;
-}
-
-Matrix2d& operator/ (Matrix2d& mat, double scalar)
-{
-	Matrix2d * matrix = new Matrix2d;
-	for (int i = 0; i < 2; i++)
-	{
-		for (int j = 0; j < 2; j++)
-		{
-			matrix->operator()(i, j) = mat(i, j) / scalar;
-		}
-	}
-	return *matrix;
 }
 
 Matrix2d& Matrix2d::inverse()
@@ -130,50 +169,6 @@ Matrix2d& Matrix2d::transpose()
 }
 
 //////////////////////////////////////////////////////////////// Matrix4d
-Matrix4d::Matrix4d(Matrix4d& mat)
-{
-	this->tab = new double*[4];
-	tab[0] = new double[4];
-	tab[1] = new double[4];
-	tab[2] = new double[4];
-	tab[3] = new double[4];
-	for (int i = 0; i<4; i++)
-		for (int j = 0; j < 4; j++)
-		{
-			tab[i][j] = mat(i, j);
-		}
-}
-
-Matrix4d::Matrix4d()
-{
-	this->tab = new double*[4];
-	tab[0] = new double[4];
-	tab[1] = new double[4];
-	tab[2] = new double[4];
-	tab[3] = new double[4];
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
-			tab[i][j] = 0;
-}
-
-Matrix4d::Matrix4d(double* tab1)
-{
-	this->tab = new double*[4];
-	tab[0] = new double[4];
-	tab[1] = new double[4];
-	tab[2] = new double[4];
-	tab[3] = new double[4];
-	int c = 0;
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++, c++)
-			tab[i][j] = tab1[c];
-}
-
-double& Matrix4d::operator() (int x, int y)
-{
-	return tab[x][y];
-}
-
 Matrix4d& operator+ (Matrix4d& mat, Matrix4d& tab)
 {
 	Matrix4d* matrix = new Matrix4d();
@@ -181,17 +176,6 @@ Matrix4d& operator+ (Matrix4d& mat, Matrix4d& tab)
 		for (int j = 0; j < 4; j++)
 		{
 			matrix->operator()(i, j) = tab.operator()(i, j) + mat.operator()(i, j);
-		}
-	return *matrix;
-}
-
-Matrix4d& Matrix4d::operator= (Matrix4d& mat)
-{
-	Matrix4d *matrix = new Matrix4d();
-	for (int i = 0; i<4; i++)
-		for (int j = 0; j < 4; j++)
-		{
-			matrix->operator()(i, j) = mat.operator()(i, j);
 		}
 	return *matrix;
 }
@@ -211,31 +195,6 @@ Matrix4d& operator* (Matrix4d& mat, Matrix4d& mat1)
 	return *result;
 }
 
-std::ostream& operator<< (std::ostream& os, Matrix4d& mat)
-{
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			os << mat(i, j) << " ";
-		}
-		os << "\n";
-	}
-	return os;
-}
-
-Matrix4d& operator/ (Matrix4d& mat, double scalar)
-{
-	Matrix4d * matrix = new Matrix4d;
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			matrix->operator()(i, j) = mat(i, j) / scalar;
-		}
-	}
-	return *matrix;
-}
 
 Matrix4d* Matrix4d::operator+=(Matrix4d* mat)
 {
@@ -262,49 +221,27 @@ Matrix4d* Matrix4d::operator*= ( double mul)
 	return this;
 }
 
-///////////////////////////////MatrixXd
-MatrixXd::MatrixXd(int size)
+//Fuctions
+/*
+Matrix* multiplyVecAndTransposedVec(std::vector<double>& vec1, std::vector<double>& vec2)
 {
-	if (size <= 0)
-		throw new std::exception("Dimension of matrix has to be positive number");
-	this->size = size;
-	this->tab = new double*[this->size];
-	for (size_t i = 0; i < size; i++)
-	{
-		this->tab[i] = new double[size] {0};
-	}
-}
+	const int size1 = vec1.size();
+	int size2 = vec2.size();
+	if (size1 != size2)
+		throw new std::exception("Sizes of 2 vectors are not equal, not possible to multiply them");
+		
+	Matrix* mat1=new Matrix(size1,size1); //compiler chooses wrong constructor, don't know why
 
-std::ostream& operator<< (std::ostream& os, MatrixXd& mat)
-{
-	const size_t size = mat.getSize();
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < size1; i++)
 	{
-		for (int j = 0; j < size; j++)
+		for (int j = 0; j < size1; j++)
 		{
-			os << mat(i, j) << " ";
+			mat1->operator()(i, j) = vec1[i]*vec2[j];
 		}
-		os << "\n";
 	}
-	return os;
+	return mat1;
 }
-
-double& MatrixXd::operator() (int x, int y)
-{
-	if ((x < 0) || (y < 0) || (x >= this->size) || (y >= this->size))
-	{
-		throw new std::exception("There is no such a cell in this matrix, coordinates are wrong");
-	}
-	//if (this->tab == nullptr)
-	//	throw new std::exception("Uninitialized");
-	return this->tab[x][y];
-}
-
-int MatrixXd::getSize()
-{
-	return this->size;
-}
-
+*/
 /////////////////////////////// Vector2d
 Vector2d::Vector2d()
 {

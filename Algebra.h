@@ -2,60 +2,53 @@
 #include <iostream>
 #include <memory>
 #include <utility>
+#include <vector>
 
-
-
-class Matrix2d {
+class Matrix {
 public:
-	Matrix2d();
-	Matrix2d(double* tab1);
-	Matrix2d(Matrix2d& mat);
+	Matrix()=default;
+	Matrix(int size,int size2=0);
+	Matrix(Matrix& mat);
+	Matrix(double* table, const std::pair<int, int> size);
+	
+	std::pair<int, int> getSize();
 
-	double& operator() (int x, int y);
+	double& operator()(int x, int y);
+	Matrix& operator=(Matrix& mat);
+
+	friend std::ostream& operator<< (std::ostream& os, Matrix& mat);
+	friend Matrix& operator/ (Matrix& mat, double scalar);
+	friend Matrix& operator+ (Matrix& mat, double scalar);
+
+protected:
+	unsigned int sizeH, sizeW;
+	double** tab;
+};
+
+class Matrix2d:public Matrix {
+public:
+	Matrix2d() :Matrix(2) {};
+	Matrix2d(double* tab1) :Matrix(tab1, std::make_pair(2, 2)) {};
+	Matrix2d(Matrix& mat) :Matrix(mat) {};
+
 	friend Matrix2d& operator+ (Matrix2d& mat, Matrix2d& tab);
-	Matrix2d& operator= (Matrix2d& mat);
 	friend Matrix2d& operator* (Matrix2d& mat, Matrix2d& mat1);
-	friend std::ostream& operator<< (std::ostream& os, Matrix2d& mat);
-	friend Matrix2d& operator/ (Matrix2d& mat, double scalar);
 
 	Matrix2d& inverse();
 	Matrix2d& transpose();
 	double determinant();
-	
-private:
-	double **tab;
 };
 
-class Matrix4d {
+class Matrix4d : public Matrix {
 public:
-	Matrix4d();
-	Matrix4d(double* tab1);
-	Matrix4d(Matrix4d& mat);
+	Matrix4d() :Matrix(4) {};
+	Matrix4d(double* tab1) :Matrix(tab1, std::make_pair(4, 4)) {};
+	Matrix4d(Matrix4d& mat) :Matrix(mat) {};
 
-	double& operator() (int x, int y);
 	friend Matrix4d& operator+ (Matrix4d& mat, Matrix4d& tab);
-	Matrix4d& operator= (Matrix4d& mat);
 	Matrix4d* operator+=(Matrix4d* mat);
 	friend Matrix4d& operator* (Matrix4d& mat, Matrix4d& mat1);
 	Matrix4d* operator*= ( double mul);
-	friend std::ostream& operator<< (std::ostream& os, Matrix4d& mat);
-	friend Matrix4d& operator/ (Matrix4d& mat, double scalar);
-
-private:
-	double **tab;
-};
-
-class MatrixXd
-{
-public:
-	MatrixXd(int size);
-	friend std::ostream& operator<< (std::ostream& os, MatrixXd& mat);
-	double& operator() (int x, int y);
-
-	int getSize();
-private:
-	double**tab;
-	int size;
 };
 
 class Vector2d {
@@ -88,3 +81,5 @@ public:
 private:
 	double* tab;
 };
+
+//Matrix* multiplyVecAndTransposedVec(std::vector<double>& vec1, std::vector<double>& vec2);
