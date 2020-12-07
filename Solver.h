@@ -18,10 +18,10 @@ namespace slv {
 		Matrix* getNMatrix();
 
 		Matrix& getJacobyMatrix2(Matrix& eta, Matrix& ksi, double* x, double* y, int point);
-		Vector2d& getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
+		Vector& getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
 
-		Vector2d& getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, Vector2d& derivatives); //derivate of shape funciton and cooridnate
-		Vector4d* getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point);
+		Vector& getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, Vector& derivatives); //derivate of shape funciton and cooridnate
+		Vector* getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point);
 		
 		Matrix* getHSumbatricies(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point);
 		Matrix* getHMatrix(Matrix& eta, Matrix& ksi, Matrix& jacoby, double k);

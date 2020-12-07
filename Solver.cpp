@@ -172,17 +172,20 @@ Matrix& slv::Solver::getJacobyMatrix2(Matrix& eta, Matrix& ksi, double* x, doubl
 	return *matrix;
 }
 
-Vector2d& slv::Solver::getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, Vector2d& derivatives) 
+Vector& slv::Solver::getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, Vector& derivatives) 
 {
-	auto vec = new Vector2d();
+	std::cout << derivatives.tab.size() << std::endl;
+	auto vec = new Vector(2);
 	vec->operator()(0) = (inversedJacoby(0, 0)*derivatives(0) + inversedJacoby(0, 1)*derivatives(1)) ; ///zgodnie ze wzorem powinno byc dzielenie przez detJ
 	vec->operator()(1) = (inversedJacoby(1, 0)*derivatives(0) + inversedJacoby(1, 1)*derivatives(1)) ;
+	std::cout << "C\n";
 	return *vec; 
 }
 
-Vector2d& slv::Solver::getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fShape, int point)
+Vector& slv::Solver::getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fShape, int point)
 {
-	auto vec = new Vector2d();
+	auto vec = new Vector(2);
+	std::cout << vec->tab.size() << std::endl;
 	//vec->operator()(0) = ksi(point, fShape);
 	//vec->operator()(1) = eta(point, fShape);
 	vec->operator()(0) = ksi(fShape,point);
@@ -190,13 +193,13 @@ Vector2d& slv::Solver::getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fSha
 	return *vec;
 }
 
-Vector4d* slv::Solver::getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point)
+Vector* slv::Solver::getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point)
 {
-	Vector4d* xy = new Vector4d[2];
+	Vector* xy = new Vector[2]{ 4,4 };
 	const size_t size = std::pow(this->gaussIntegralScheme,2);
 	for (int i = 0; i < 4; i++)
 	{
-		Matrix mat = jacoby;
+		Matrix mat (jacoby);
 		inverseMat2(mat);
 		auto buffer = this->getDerivativeOfNByCoordinate_XY(mat, determinantMat2(jacoby),
 			this->getVectorOfDerivatives(ksi, eta, i, point));
@@ -210,9 +213,10 @@ Vector4d* slv::Solver::getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix
 Matrix* slv::Solver::getHSumbatricies(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point)
 {
 	auto result = getXYDerivativesForPoint(eta, ksi, jacoby, point);
+	std::cout << "Kutas\n";
 	auto H1 = vecAndvecTMultiplication(result[0]);
-	auto H2 = vecAndvecTMultiplication(result[0]);
-	delete result;
+	auto H2 = vecAndvecTMultiplication(result[0]); //?????????????????????????????????????????
+	//delete result;
 	auto a = new Matrix(4);
 	*a = H1->operator+= (*H2);
 	return a;
@@ -223,7 +227,6 @@ Matrix* slv::Solver::getHMatrix(Matrix& eta, Matrix& ksi, Matrix& jacoby, double
 	double detJ = determinantMat2(jacoby);
 	Matrix* H = new Matrix(4);
 	const int size = std::pow(this->gaussIntegralScheme, 2);
-	std::cout << "DUPA\n";
 	for (int i = 0; i < size; i++)
 	{
 		auto buffer= this->getHSumbatricies(eta, ksi, jacoby, i);
@@ -254,7 +257,7 @@ void slv::Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<Matrix*>& local
 
 Matrix * slv::Solver::getCLocalMatrix(double Eta, double Ksi)
 {
-	Vector4d* vec = new Vector4d();
+	Vector* vec = new Vector(4);
 	vec->operator()(0) = 0.25*(1 - Eta)*(1 - Ksi);
 	vec->operator()(1) = 0.25*(1 - Eta)*(1 + Ksi);
 	vec->operator()(2) = 0.25*(1 + Eta)*(1 + Ksi);

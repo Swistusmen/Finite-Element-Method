@@ -7,7 +7,7 @@
 class Matrix {
 public:
 	Matrix()=default;
-	Matrix(int size,int size2=0);
+	Matrix(int size, int size2 = 0); explicit
 	Matrix(const Matrix& mat);
 	Matrix(Matrix&& mat); 
 	Matrix(double* table, const std::pair<int, int> size);
@@ -32,39 +32,22 @@ protected:
 	std::vector<std::vector<double>> tab;
 };
 
+struct Vector {
+	Vector()=default;
+	Vector(size_t size);
+	Vector(double* data, const size_t size);
+	Vector(const Vector& vec);
+	
+	Vector& operator=(Vector& vec);
+	friend std::unique_ptr<Vector> operator+ (Vector& a, Vector& b);
+	friend std::ostream& operator<< (std::ostream& os,const Vector& vec);
+	friend std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector& a);
+	double& operator()(int);
+	double operator()(int) const;
+
+	std::vector<double> tab;
+};
+
 double determinantMat2(Matrix& mat);
 void transposeMat2(Matrix& mat);
 void inverseMat2(Matrix& mat);
-
-class Vector2d {
-public:
-	Vector2d();
-	Vector2d(double* data);
-	Vector2d(Vector2d& vec);
-
-	Vector2d& operator=(Vector2d& vec);
-	friend Vector2d& operator+ (Vector2d& a, Vector2d& b);
-	friend std::ostream& operator <<(std::ostream& os, Vector2d& vec);
-	friend std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector2d& a);
-	double& operator()(int);
-private:
-	double* tab;
-};
-
-class Vector4d {
-public:
-	Vector4d();
-	Vector4d(double* data);
-	Vector4d(Vector4d& vec);
-
-	Vector4d& operator=(Vector4d& vec);
-	friend Vector4d& operator+ (Vector4d& a, Vector4d& b);
-	friend std::ostream& operator<< (std::ostream& os, Vector4d& vec);
-	friend std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector4d& a);
-	double& operator()(int);
-
-private:
-	double* tab;
-};
-
-//Matrix* multiplyVecAndTransposedVec(std::vector<double>& vec1, std::vector<double>& vec2);

@@ -273,55 +273,71 @@ void inverseMat2(Matrix& mat)
 	mat(1, 0) = mat(0,1) / det;
 
 }
-
-/////////////////////////////// Vector2d
-Vector2d::Vector2d()
+////////////////////////////////////////////////// Vector
+Vector::Vector(double* data, const size_t size)
 {
-	this->tab = new double[2]{ 0 };
+	for (size_t i = 0; i < size; i++)
+	{
+		tab[i] = data[i];
+	}
 }
 
-Vector2d::Vector2d(double* data)
+Vector::Vector(const Vector& vec)
 {
-	this->tab = new double[2]{ data[0],data[1] };
+	const size_t size = vec.tab.size();
+	std::cout << "M: "<<size << std::endl;
+	for (size_t i = 0; i < size; i++)
+	{
+		tab.push_back(vec.tab[i]);
+	}
 }
 
-Vector2d::Vector2d(Vector2d& vec)
-{
-	this->tab = new double[2];
-	tab[0] = vec(0);
-	tab[1] = vec(1);
-}
-
-double& Vector2d::operator()(int i)
+double& Vector::operator()(int i)
 {
 	return this->tab[i];
 }
 
-Vector2d& Vector2d::operator=(Vector2d& vec)
+double Vector::operator()(int i) const
 {
-	Vector2d* tab = new Vector2d();
-	tab->operator()(0) = vec(0);
-	tab->operator()(1) = vec(1);
-	return *tab;
+	return this->tab[i];
 }
 
-Vector2d& operator+ (Vector2d& a, Vector2d& b)
+Vector& Vector::operator=(Vector& vec)
 {
-	Vector2d * vec = new Vector2d();
-	vec->operator()(0) = a(0) + b(0);
-	vec->operator()(1) = a(1) + b(1);
-	return *vec;
+	const size_t size = vec.tab.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		tab[i] = vec(i);
+	}
+	return *this;
 }
 
-std::ostream& operator <<(std::ostream& os, Vector2d& vec)
+std::unique_ptr<Vector> operator+ (Vector& a, Vector& b)
 {
-	os << vec(0) << " " << vec(1);
+	if (a.tab.size() != b.tab.size())
+		throw new std::exception("Vectors have different sizes");
+	const size_t size = a.tab.size();
+	auto vec = std::make_unique<Vector>();
+	for (size_t i = 0; i < size; i++)
+	{
+		vec->tab.push_back(a(i) + b(i));
+	}
+	return vec;
+}
+
+std::ostream& operator<< (std::ostream& os, const Vector& vec)
+{
+	const size_t size = vec.tab.size();
+	for (size_t i = 0; i < size; i++)
+	{
+		os << vec(i) << " ";
+	}
 	return os;
 }
 
-std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector2d& a)
+std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector& a)
 {
-	const size_t size = 2;
+	const size_t size = a.tab.size();
 	auto mat = std::make_unique<Matrix>(size);
 	for (int i = 0; i < size; i++)
 	{
@@ -333,67 +349,10 @@ std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector2d& a)
 	return mat;
 }
 
-/////////////////////////////// Vector4d
-Vector4d::Vector4d()
+Vector::Vector(size_t size)
 {
-	this->tab = new double[4]{ 0 };
-}
-
-Vector4d::Vector4d(double* data)
-{
-	this->tab = new double[4]{ data[0],data[1],data[2],data[3]};
-}
-
-Vector4d::Vector4d(Vector4d& vec)
-{
-	this->tab = new double[4];
-	tab[0] = vec(0);
-	tab[1] = vec(1);
-	tab[2] = vec(2);
-	tab[3] = vec(3);
-}
-
-double& Vector4d::operator()(int i)
-{
-	return this->tab[i];
-}
-
-Vector4d& Vector4d::operator=( Vector4d& vec)
-{
-	Vector4d* tab = new Vector4d();
-	tab->operator()(0) = vec(0);
-	tab->operator()(1) = vec(1);
-	tab->operator()(2) = vec(2);
-	tab->operator()(3) = vec(3);
-	return *tab;
-}
-
-Vector4d& operator+ (Vector4d& a, Vector4d& b)
-{
-	Vector4d * vec = new Vector4d();
-	vec->operator()(0) = a(0) + b(0);
-	vec->operator()(1) = a(1) + b(1);
-	vec->operator()(2) = a(2) + b(2);
-	vec->operator()(3) = a(3) + b(3);
-	return *vec;
-}
-
-std::ostream& operator <<(std::ostream& os, Vector4d& vec)
-{
-	os << vec(0) << " " << vec(1)<<" "<<vec(2)<<" "<<vec(3);
-	return os;
-}
-
-std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector4d& a)
-{
-	const size_t size = 4;
-	auto mat = std::make_unique<Matrix>(size);
-	for (int i = 0; i < size; i++)
+	for (size_t i = 0; i < size; i++)
 	{
-		for (int j = 0; j < size; j++)
-		{
-			mat->operator()(i, j) = a(i)*a(j);
-		}
+		tab.push_back(0);
 	}
-	return mat;
 }
