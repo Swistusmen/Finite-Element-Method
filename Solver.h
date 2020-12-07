@@ -9,6 +9,11 @@
 #include "InputData.h"
 
 namespace slv {
+	using VecSPtr = std::shared_ptr<Vector>;
+	using VecUPtr = std::unique_ptr<Vector>;
+	using MatSPtr = std::shared_ptr<Matrix>;
+	using MatUPtr = std::unique_ptr<Matrix>;
+
 	class Solver {
 	public:
 		Solver(int points);

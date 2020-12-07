@@ -13,11 +13,6 @@
 
 int main()
 {
-	/*
-	Matrix mat(3);
-	std::cout << mat << std::endl;
-	*/
-	
 	auto data = fs::readRectangleMeshInput("a.txt");
 	data::RectangleMesh mesh(data);
 	

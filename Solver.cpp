@@ -174,18 +174,15 @@ Matrix& slv::Solver::getJacobyMatrix2(Matrix& eta, Matrix& ksi, double* x, doubl
 
 Vector& slv::Solver::getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, Vector& derivatives) 
 {
-	std::cout << derivatives.tab.size() << std::endl;
 	auto vec = new Vector(2);
 	vec->operator()(0) = (inversedJacoby(0, 0)*derivatives(0) + inversedJacoby(0, 1)*derivatives(1)) ; ///zgodnie ze wzorem powinno byc dzielenie przez detJ
 	vec->operator()(1) = (inversedJacoby(1, 0)*derivatives(0) + inversedJacoby(1, 1)*derivatives(1)) ;
-	std::cout << "C\n";
 	return *vec; 
 }
 
 Vector& slv::Solver::getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fShape, int point)
 {
 	auto vec = new Vector(2);
-	std::cout << vec->tab.size() << std::endl;
 	//vec->operator()(0) = ksi(point, fShape);
 	//vec->operator()(1) = eta(point, fShape);
 	vec->operator()(0) = ksi(fShape,point);
@@ -213,7 +210,6 @@ Vector* slv::Solver::getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix& 
 Matrix* slv::Solver::getHSumbatricies(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point)
 {
 	auto result = getXYDerivativesForPoint(eta, ksi, jacoby, point);
-	std::cout << "Kutas\n";
 	auto H1 = vecAndvecTMultiplication(result[0]);
 	auto H2 = vecAndvecTMultiplication(result[0]); //?????????????????????????????????????????
 	//delete result;
@@ -240,7 +236,6 @@ Matrix* slv::Solver::getHMatrix(Matrix& eta, Matrix& ksi, Matrix& jacoby, double
 void slv::Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<Matrix*>& locals, std::vector<std::array<int, 4>>& nodes)
 {
 	const size_t numberOfLocals = locals.size();
-	std::cout << numberOfLocals << std::endl;
 	for (size_t i = 0; i < numberOfLocals; i++)
 	{
 		auto& cur = *locals[i];
