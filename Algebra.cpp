@@ -1,6 +1,7 @@
 #include <iostream>
 #include "Algebra.h"
 
+////////////////////// Constructors
 Matrix::Matrix(int size, int size2)
 {
 	if (size <= 0 || size2 < 0)
@@ -9,29 +10,28 @@ Matrix::Matrix(int size, int size2)
 		size2 = size;
 	this->sizeH = size;
 	this->sizeW = size2 == 0 ? size : size2;
-	this->tab = new double*[this->sizeH];
 	for (int i = 0; i < this->sizeH; i++)
 	{
-		this->tab[i] = new double[this->sizeW];
+		this->tab.push_back(std::vector<double>());
 		for (int j = 0; j < this->sizeW; j++)
 		{
-			this->tab[i][j] = 0.0;
+			this->tab[i].push_back(0);
 		}
 	}
 }
 
-Matrix::Matrix(Matrix& mat)
+Matrix::Matrix(const Matrix& mat)
 {
-	auto size = mat.getSize();
+	auto size= mat.getSize();
 	this->sizeH = size.first;
 	this->sizeW = size.second;
-	this->tab = new double*[this->sizeH];
+
 	for (int i = 0; i < this->sizeH; i++)
 	{
-		this->tab[i] = new double[this->sizeW];
+		this->tab.push_back(std::vector<double>());
 		for (int j = 0; j < this->sizeW; j++)
 		{
-			this->tab[i][j] = mat(i,j);
+			this->tab[i].push_back(mat(i,j));
 		}
 	}
 }
@@ -44,20 +44,37 @@ Matrix::Matrix(double* table, const std::pair<int, int> size)
 		throw std::exception("Initializaing table is empty");
 	this->sizeH = size.first;
 	this->sizeW = size.second;
-	this->tab = new double*[this->sizeH];
 	int iterator = 0;
-	for (size_t i = 0; i < this->sizeH; i++)
+
+	for (int i = 0; i < this->sizeH; i++)
 	{
-		this->tab[i] = new double[this->sizeW];
-		for (size_t j = 0; j < this->sizeW; j++)
+		this->tab.push_back(std::vector<double>());
+		for (int j = 0; j < this->sizeW; j++)
 		{
-			this->tab[i][j] = std::move(table[iterator]);
+			this->tab[i].push_back(std::move(table[iterator]));
 			iterator++;
 		}
 	}
 }
 
-std::pair<int, int> Matrix::getSize()
+Matrix::Matrix(Matrix&& mat)
+{
+	auto size = mat.getSize();
+	this->sizeH = size.first;
+	this->sizeW = size.second;
+
+	for (int i = 0; i < this->sizeH; i++)
+	{
+		this->tab.push_back(std::vector<double>());
+		for (int j = 0; j < this->sizeW; j++)
+		{
+			this->tab[i].push_back(std::move(mat(i, j)));
+		}
+	}
+}
+
+/////////////////////////// The most used functions
+std::pair<int, int> Matrix::getSize() const
 {
 	return std::make_pair(this->sizeH,this->sizeW);
 }
@@ -69,7 +86,14 @@ double& Matrix::operator()(int x, int y)
 	return this->tab[x][y];
 }
 
-std::ostream& operator<< (std::ostream& os, Matrix& mat)
+double Matrix::operator()(int x, int y) const
+{
+	if (x < 0 || x >(this->sizeH - 1) || y < 0 || y >(this->sizeW - 1))
+		throw new std::exception("Wrong index in () matrix operator");
+	return this->tab[x][y];
+}
+
+std::ostream& operator<< (std::ostream& os, const Matrix& mat)
 {
 	auto size = mat.getSize();
 	for (int i = 0; i < size.first; i++)
@@ -81,6 +105,70 @@ std::ostream& operator<< (std::ostream& os, Matrix& mat)
 		os << std::endl;
 	}
 	return os;
+}
+///////////////////////////////////// Operators 
+Matrix& Matrix::operator=(const Matrix& mat)
+{
+	auto size = this->getSize();
+	const size_t sizeH = size.first;
+	const size_t sizeW = size.first;
+	if ((this->sizeH != sizeH) && (this->sizeH != sizeH))
+		throw new std::exception("Copy operations is inpossible due to differnet size");
+	for (size_t i = 0; i < sizeH; i++)
+	{
+		for (size_t j = 0; j < sizeW; j++)
+		{
+			this->operator()(i, j) = mat(i, j);
+		}
+	}
+	return *this;
+}
+
+Matrix& Matrix::operator=( Matrix&& mat)
+{
+	auto size = this->getSize();
+	const size_t sizeH = size.first;
+	const size_t sizeW = size.first;
+	if ((this->sizeH != sizeH) && (this->sizeH != sizeH))
+		throw new std::exception("Copy operations is inpossible due to differnet size");
+	for (size_t i = 0; i < sizeH; i++)
+	{
+		for (size_t j = 0; j < sizeW; j++)
+		{
+			this->operator()(i, j) = std::move(mat(i, j));
+		}
+	}
+	return *this;
+}
+
+Matrix& Matrix::operator+=(Matrix& mat)
+{
+	auto size = mat.getSize();
+	if ((this->sizeH != size.first) || (this->sizeW != size.second))
+	{
+		throw new std::exception("Wrong sizes of operations");
+	}
+	for (size_t i = 0; i < size.first; i++)
+	{
+		for (size_t j = 0; j < size.second; j++)
+		{
+			this->tab[i][j] += mat(i, j);
+		}
+	}
+	return *this;
+}
+
+Matrix& Matrix::operator*=(double scalar)
+{
+	const size_t h = this->sizeH, w = this->sizeW;
+	for (size_t i = 0; i < h; i++)
+	{
+		for (size_t j = 0; j < w; j++)
+		{
+			this->tab[i][j] *= scalar;
+		}
+	}
+	return *this;
 }
 
 Matrix& operator/ (Matrix& mat, double scalar)
@@ -113,6 +201,47 @@ Matrix& operator+ (Matrix& mat, double scalar)
 		}
 	}
 	return mat;
+}
+
+std::shared_ptr<Matrix> operator+ (Matrix& mat, Matrix& tab)
+{
+	const auto size1 = mat.getSize();
+	const auto size2 = tab.getSize();
+	if (size1 != size2)
+	{
+		throw new std::exception("Wrong sizes of matricies, cannot add them");
+	}
+	auto newMat = std::make_shared<Matrix>(size1.first, size1.second);
+	for (size_t i = 0; i < size1.first; i++)
+	{
+		for (size_t j = 0; j < size1.second; j++)
+		{
+			newMat->operator()(i, j) = mat(i, j) + tab(i, j);
+		}
+	}
+	return newMat;
+}
+
+std::shared_ptr<Matrix> operator* (Matrix& mat, Matrix& mat1)
+{
+	const auto size1 = mat.getSize();
+	const auto size2 = mat1.getSize();
+	if (size1.first != size2.first!= size1.second!=size2.second)
+	{
+		throw new std::exception("Wrong sizes of matricies, cannot add them. You can multiply only quadratic matrisies");
+	}
+	auto newMat = std::make_shared<Matrix>(size1.first, size1.second);
+	const size_t size = size2.first;
+	for (size_t i = 0; i < size; i++)
+	{
+		for (size_t j = 0; j < size; j++)
+		{
+			for (int c = 0; c < size; c++) {
+				newMat->operator()(i, j) += mat(i, c)*mat1(c, j);
+			}
+		}
+	}
+	return newMat;
 }
 
 //Matrix2d

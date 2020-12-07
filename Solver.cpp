@@ -5,6 +5,7 @@
 #include <cmath>
 #include <vector>
 #include <array>
+#include "InputData.h"
 
 slv::Solver::Solver(int points)
 {
@@ -247,4 +248,36 @@ void slv::Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<Matrix4d*>& loc
 			}
 		}
 	}
+}
+
+Matrix4d * slv::Solver::getCLocalMatrix(double Eta, double Ksi)
+{
+	Vector4d* vec = new Vector4d();
+	vec->operator()(0) = 0.25*(1 - Eta)*(1 - Ksi);
+	vec->operator()(1) = 0.25*(1 - Eta)*(1 + Ksi);
+	vec->operator()(2) = 0.25*(1 + Eta)*(1 + Ksi);
+	vec->operator()(3) = 0.25*(1 + Eta)*(1 - Ksi);
+	auto mat = vecAndvecTMultiplication(*vec);
+	Matrix4d* mat1 = &mat;
+	return mat1;//need to be fixed
+}
+
+Matrix4d* slv::Solver::getCMatrix(data::Elem4& data,Matrix2d& jacoby,double ro,double temp)
+{
+	size_t size = this->gaussIntegralScheme;
+	double det = jacoby.determinant();
+
+	Matrix4d* mat = new Matrix4d();
+	for (size_t i = 0; i < size; ++i)
+	{
+		for (size_t j = 0; j < size; j++)
+		{
+			auto buffer = this->getCLocalMatrix(data.tabEta[i],data.tabKsi[j]);
+			*buffer *= ro;
+			*buffer *= temp;
+			*buffer *= det;
+			mat->operator += (buffer);
+		}
+	}
+	return mat;
 }
