@@ -30,8 +30,8 @@ int main()
 	std::cout << eta << std::endl;
 	std::cout << ksi << std::endl;
 	
-	std::vector<Matrix4d*> localHMatricies;
-	std::vector<Matrix4d*> localCMatricies;
+	std::vector<Matrix*> localHMatricies;
+	std::vector<Matrix*> localCMatricies;
 	std::vector<std::array<int, 4>> nodes;
 	
 	data::Elem4 elem;
@@ -42,7 +42,7 @@ int main()
 	std::cout << size << std::endl;
 	for (int i = 1; i <= size; i++)
 	{
-		Matrix2d jacoby = solver.getJacobyMatrix2(eta, ksi, mesh.getX(i), mesh.getY(i), 0);
+		Matrix jacoby = solver.getJacobyMatrix2(eta, ksi, mesh.getX(i), mesh.getY(i), 0);
 		std::cout << jacoby << std::endl << std::endl;
 		localHMatricies.push_back(solver.getHMatrix(eta, ksi, jacoby, 25));
 		//localCMatricies.push_back(solver.getCMatrix(elem,jacoby,ro,temp));

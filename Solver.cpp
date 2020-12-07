@@ -156,9 +156,9 @@ Matrix& slv::Solver::getKsiMatrix()
 	}
 }
 
-Matrix2d& slv::Solver::getJacobyMatrix2(Matrix& eta, Matrix& ksi, double* x, double* y, int point)
+Matrix& slv::Solver::getJacobyMatrix2(Matrix& eta, Matrix& ksi, double* x, double* y, int point)
 {
-	auto matrix = new Matrix2d();
+	auto matrix = new Matrix(2);
 	const int size = std::pow(this->gaussIntegralScheme, 2);
 	for (int i = 0; i < size; i++)
 		matrix->operator()(0, 0) += x[i] * ksi(point, i);
@@ -172,7 +172,7 @@ Matrix2d& slv::Solver::getJacobyMatrix2(Matrix& eta, Matrix& ksi, double* x, dou
 	return *matrix;
 }
 
-Vector2d& slv::Solver::getDerivativeOfNByCoordinate_XY(Matrix2d& inversedJacoby, double detJ, Vector2d& derivatives) 
+Vector2d& slv::Solver::getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, Vector2d& derivatives) 
 {
 	auto vec = new Vector2d();
 	vec->operator()(0) = (inversedJacoby(0, 0)*derivatives(0) + inversedJacoby(0, 1)*derivatives(1)) ; ///zgodnie ze wzorem powinno byc dzielenie przez detJ
@@ -190,13 +190,15 @@ Vector2d& slv::Solver::getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fSha
 	return *vec;
 }
 
-Vector4d* slv::Solver::getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix2d& jacoby, int point)
+Vector4d* slv::Solver::getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point)
 {
 	Vector4d* xy = new Vector4d[2];
 	const size_t size = std::pow(this->gaussIntegralScheme,2);
 	for (int i = 0; i < 4; i++)
 	{
-		auto buffer = this->getDerivativeOfNByCoordinate_XY(jacoby.inverse(), jacoby.determinant(),
+		Matrix mat = jacoby;
+		inverseMat2(mat);
+		auto buffer = this->getDerivativeOfNByCoordinate_XY(mat, determinantMat2(jacoby),
 			this->getVectorOfDerivatives(ksi, eta, i, point));
 		xy[0].operator()(i) = (buffer)(0);
 		xy[1].operator()(i) = (buffer)(1);
@@ -205,34 +207,34 @@ Vector4d* slv::Solver::getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix
 }
 
 
-Matrix4d* slv::Solver::getHSumbatricies(Matrix& eta, Matrix& ksi, Matrix2d& jacoby, int point)
+Matrix* slv::Solver::getHSumbatricies(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point)
 {
 	auto result = getXYDerivativesForPoint(eta, ksi, jacoby, point);
-	Matrix4d* H1 = new Matrix4d(vecAndvecTMultiplication(result[0]));
-	Matrix4d* H2 = new Matrix4d(vecAndvecTMultiplication(result[1]));
+	auto H1 = vecAndvecTMultiplication(result[0]);
+	auto H2 = vecAndvecTMultiplication(result[0]);
 	delete result;
-	auto a = new Matrix4d(*H1 + *H2);
+	auto a = new Matrix(4);
+	*a = H1->operator+= (*H2);
 	return a;
 }
 
-Matrix4d* slv::Solver::getHMatrix(Matrix& eta, Matrix& ksi, Matrix2d& jacoby, double k)
+Matrix* slv::Solver::getHMatrix(Matrix& eta, Matrix& ksi, Matrix& jacoby, double k)
 {
-	double detJ = jacoby.determinant();
-
-	Matrix4d* H = new Matrix4d();
+	double detJ = determinantMat2(jacoby);
+	Matrix* H = new Matrix(4);
 	const int size = std::pow(this->gaussIntegralScheme, 2);
-
+	std::cout << "DUPA\n";
 	for (int i = 0; i < size; i++)
 	{
 		auto buffer= this->getHSumbatricies(eta, ksi, jacoby, i);
 		*buffer *= k*detJ;
 		*buffer *= this->wages[i];
-		(*H) += buffer;
+		H->operator+=(*buffer);
 	}
 	return H;
 }
 
-void slv::Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<Matrix4d*>& locals, std::vector<std::array<int, 4>>& nodes)
+void slv::Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<Matrix*>& locals, std::vector<std::array<int, 4>>& nodes)
 {
 	const size_t numberOfLocals = locals.size();
 	std::cout << numberOfLocals << std::endl;
@@ -250,7 +252,7 @@ void slv::Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<Matrix4d*>& loc
 	}
 }
 
-Matrix4d * slv::Solver::getCLocalMatrix(double Eta, double Ksi)
+Matrix * slv::Solver::getCLocalMatrix(double Eta, double Ksi)
 {
 	Vector4d* vec = new Vector4d();
 	vec->operator()(0) = 0.25*(1 - Eta)*(1 - Ksi);
@@ -258,16 +260,17 @@ Matrix4d * slv::Solver::getCLocalMatrix(double Eta, double Ksi)
 	vec->operator()(2) = 0.25*(1 + Eta)*(1 + Ksi);
 	vec->operator()(3) = 0.25*(1 + Eta)*(1 - Ksi);
 	auto mat = vecAndvecTMultiplication(*vec);
-	Matrix4d* mat1 = &mat;
+	Matrix* mat1 = new Matrix();
+	mat1->operator= (*mat);
 	return mat1;//need to be fixed
 }
 
-Matrix4d* slv::Solver::getCMatrix(data::Elem4& data,Matrix2d& jacoby,double ro,double temp)
+Matrix* slv::Solver::getCMatrix(data::Elem4& data,Matrix& jacoby,double ro,double temp)
 {
 	size_t size = this->gaussIntegralScheme;
-	double det = jacoby.determinant();
+	double det = determinantMat2(jacoby);
 
-	Matrix4d* mat = new Matrix4d();
+	Matrix* mat = new Matrix();
 	for (size_t i = 0; i < size; ++i)
 	{
 		for (size_t j = 0; j < size; j++)
@@ -276,7 +279,7 @@ Matrix4d* slv::Solver::getCMatrix(data::Elem4& data,Matrix2d& jacoby,double ro,d
 			*buffer *= ro;
 			*buffer *= temp;
 			*buffer *= det;
-			mat->operator += (buffer);
+			mat->operator +=(*buffer);
 		}
 	}
 	return mat;

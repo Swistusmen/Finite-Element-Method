@@ -244,133 +244,36 @@ std::shared_ptr<Matrix> operator* (Matrix& mat, Matrix& mat1)
 	return newMat;
 }
 
-//Matrix2d
-Matrix2d& operator+ (Matrix2d& mat, Matrix2d& tab)
+double determinantMat2(Matrix& mat)
 {
-	Matrix2d* matrix = new Matrix2d();
-	for(int i=0;i<2;i++)
-		for (int j = 0; j < 2; j++)
-		{
-			matrix->operator()(i, j) = tab.operator()(i, j) + mat.operator()(i, j);
-		}
-	return *matrix;
+	auto size = mat.getSize();
+	if ((size.first == size.second)&&(size.first != 2))
+		throw new std::exception("Matrix has to be 2x2\n");
+	return mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0);
 }
 
-Matrix2d& operator* (Matrix2d& mat, Matrix2d& mat1)
+void transposeMat2(Matrix& mat)
 {
-	Matrix2d* result = new Matrix2d();
-	for (int i = 0; i < 2; i++)
-	{
-		for (int j = 0; j < 2; j++)
-		{
-			for (int c = 0; c < 2; c++) {
-				result->operator()(i, j) += mat(i, c)*mat1(c, j);
-			}
-		}
-	}
-	return *result;
+	auto size = mat.getSize();
+	if ((size.first == size.second) && (size.first != 2))
+		throw new std::exception("Matrix has to be 2x2\n");
+	mat(0, 1) = mat(1,0);
+	mat(1, 0) = mat(0,1);
 }
 
-Matrix2d& Matrix2d::inverse()
+void inverseMat2(Matrix& mat)
 {
-	Matrix2d* matrix = new Matrix2d;
-	double det = this->determinant();
-	matrix->operator()(0, 0) = tab[1][1]/det;
-	matrix->operator()(1, 1) = tab[0][0]/det;
-	matrix->operator()(0, 1) = tab[1][0]/det;
-	matrix->operator()(1, 0) = tab[0][1]/det;
-	return *matrix;
+	auto size = mat.getSize();
+	if ((size.first == size.second) && (size.first != 2))
+		throw new std::exception("Matrix has to be 2x2\n");
+	double det = determinantMat2(mat);
+	mat(0, 0) = mat(1,1) / det;
+	mat(1, 1) = mat(0,0) / det;
+	mat(0, 1) = mat(1,0) / det;
+	mat(1, 0) = mat(0,1) / det;
+
 }
 
-double Matrix2d::determinant()
-{
-	return tab[0][0] * tab[1][1] - tab[0][1] * tab[1][0];
-}
-
-Matrix2d& Matrix2d::transpose()
-{
-	Matrix2d* matrix = new Matrix2d();
-	matrix->operator()(0, 0) = tab[0][0];
-	matrix->operator()(1, 1) = tab[1][1];
-	matrix->operator()(0, 1) = tab[1][0];
-	matrix->operator()(1, 0) = tab[0][1];
-	return *matrix;
-}
-
-//////////////////////////////////////////////////////////////// Matrix4d
-Matrix4d& operator+ (Matrix4d& mat, Matrix4d& tab)
-{
-	Matrix4d* matrix = new Matrix4d();
-	for (int i = 0; i<4; i++)
-		for (int j = 0; j < 4; j++)
-		{
-			matrix->operator()(i, j) = tab.operator()(i, j) + mat.operator()(i, j);
-		}
-	return *matrix;
-}
-
-Matrix4d& operator* (Matrix4d& mat, Matrix4d& mat1)
-{
-	Matrix4d* result = new Matrix4d();
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			for (int c = 0; c < 4; c++) {
-				result->operator()(i, j) += mat(i, c)*mat1(c, j);
-			}
-		}
-	}
-	return *result;
-}
-
-
-Matrix4d* Matrix4d::operator+=(Matrix4d* mat)
-{
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			this->tab[i][j] += (*mat).operator()(i, j);
-		}
-	}
-	return this;
-}
-
-Matrix4d* Matrix4d::operator*= ( double mul)
-{
-	for (int i = 0; i < 4; i++)
-	{
-		for (int j = 0; j < 4; j++)
-		{
-			tab[i][j] *= mul;
-		}
-	}
-
-	return this;
-}
-
-//Fuctions
-/*
-Matrix* multiplyVecAndTransposedVec(std::vector<double>& vec1, std::vector<double>& vec2)
-{
-	const int size1 = vec1.size();
-	int size2 = vec2.size();
-	if (size1 != size2)
-		throw new std::exception("Sizes of 2 vectors are not equal, not possible to multiply them");
-		
-	Matrix* mat1=new Matrix(size1,size1); //compiler chooses wrong constructor, don't know why
-
-	for (int i = 0; i < size1; i++)
-	{
-		for (int j = 0; j < size1; j++)
-		{
-			mat1->operator()(i, j) = vec1[i]*vec2[j];
-		}
-	}
-	return mat1;
-}
-*/
 /////////////////////////////// Vector2d
 Vector2d::Vector2d()
 {
@@ -416,14 +319,18 @@ std::ostream& operator <<(std::ostream& os, Vector2d& vec)
 	return os;
 }
 
-Matrix2d& Vector2d::vecAndvecTMultiplication(Vector2d& a)
+std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector2d& a)
 {
-	Matrix2d *mat = new Matrix2d();
-	mat->operator()(0, 0) = a(0)*a(0);
-	mat->operator()(0, 1) = a(0)*a(1);
-	mat->operator()(1, 0) = a(1)*a(0);
-	mat->operator()(1, 1) = a(0)*a(0);
-	return *mat;
+	const size_t size = 2;
+	auto mat = std::make_unique<Matrix>(size);
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < size; j++)
+		{
+			mat->operator()(i, j) = a(i)*a(j);
+		}
+	}
+	return mat;
 }
 
 /////////////////////////////// Vector4d
@@ -477,15 +384,16 @@ std::ostream& operator <<(std::ostream& os, Vector4d& vec)
 	return os;
 }
 
-Matrix4d& vecAndvecTMultiplication(Vector4d& a)
+std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector4d& a)
 {
-	Matrix4d *mat = new Matrix4d();
-	for (int i = 0; i < 4; i++)
+	const size_t size = 4;
+	auto mat = std::make_unique<Matrix>(size);
+	for (int i = 0; i < size; i++)
 	{
-		for (int j = 0; j < 4; j++)
+		for (int j = 0; j < size; j++)
 		{
 			mat->operator()(i, j) = a(i)*a(j);
 		}
 	}
-	return *mat;
+	return mat;
 }
