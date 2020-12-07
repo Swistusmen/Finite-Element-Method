@@ -18,23 +18,23 @@ namespace slv {
 	public:
 		Solver(int points);
 
-		Matrix& getEtaMatrix();
-		Matrix& getKsiMatrix();
+		MatSPtr getEtaMatrix();
+		MatSPtr getKsiMatrix();
 		Matrix* getNMatrix();
 
-		Matrix& getJacobyMatrix2(Matrix& eta, Matrix& ksi, double* x, double* y, int point);
-		Vector& getVectorOfDerivatives(Matrix& ksi, Matrix& eta, int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
+		MatSPtr getJacobyMatrix2(MatSPtr& eta, MatSPtr& ksi, double* x, double* y, int point);
+		VecSPtr getVectorOfDerivatives(MatSPtr& ksi, MatSPtr& eta, int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
 
-		Vector& getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, Vector& derivatives); //derivate of shape funciton and cooridnate
-		Vector* getXYDerivativesForPoint(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point);
+		VecSPtr getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, VecSPtr& derivatives); //derivate of shape funciton and cooridnate
+		std::vector<VecSPtr> getXYDerivativesForPoint(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point);
 		
-		Matrix* getHSumbatricies(Matrix& eta, Matrix& ksi, Matrix& jacoby, int point);
-		Matrix* getHMatrix(Matrix& eta, Matrix& ksi, Matrix& jacoby, double k);
-
-		Matrix* getCLocalMatrix(double Eta, double Ksi);
-		Matrix* getCMatrix(data::Elem4& data, Matrix& jacoby, double ro, double temp);
-		
-		void aggregateGlobalMatrix(Matrix& mat, std::vector<Matrix*>& locals, std::vector<std::array<int, 4>>& nodes);
+		MatUPtr getHSumbatricies(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point);
+		MatUPtr getHMatrix(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, double k);
+		/*
+		MatUPtr getCLocalMatrix(double Eta, double Ksi);
+		MatUPtr getCMatrix(data::Elem4& data, MatSPtr& jacoby, double ro, double temp);
+		*/
+		void aggregateGlobalMatrix(Matrix& mat, std::vector<MatUPtr>& locals, std::vector<std::array<int, 4>>& nodes);
 	private:
 		int gaussIntegralScheme;
 		std::vector<double> wages;
