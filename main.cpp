@@ -11,6 +11,8 @@
 #include <array>
 #include <cmath>
 
+//TODO make copy and move assignment for matrix and vector class
+
 int main()
 {
 	auto data = fs::readRectangleMeshInput("a.txt");
@@ -19,26 +21,29 @@ int main()
 	int numberOfIntegrationalPoints = 3;
 
 	slv::Solver solver(2);
-	auto eta (solver.getEtaMatrix());
-	auto ksi (solver.getKsiMatrix());
+	auto eta (solver.getLocalMatrixOfLocalDerivatives(slv::LocalType::ETA)); 
+	auto ksi(solver.getLocalMatrixOfLocalDerivatives(slv::LocalType::KSI)); 
 	const int size = mesh.maxIndexOfElement();
-	std::cout << *eta << std::endl;
-	std::cout << *ksi << std::endl;
+	std::cout << "Eta matrix\n"<<*eta << std::endl;
+	std::cout << "Ksi matrix\n"<< *ksi << std::endl;
 	
 	std::vector<slv::MatUPtr> localHMatricies;
-	std::vector<slv::MatUPtr> localCMatricies;
+	//std::vector<slv::MatUPtr> localCMatricies;
 	std::vector<std::array<int, 4>> nodes;
 	
+	/*
 	data::Elem4 elem;
 	double ro = 5;
 	double temp = 700.0;
+	*/
 
 	std::cout << size << std::endl;
 	for (int i = 1; i <= size; i++)
 	{
-		auto jacoby (solver.getJacobyMatrix2(eta, ksi, mesh.getX(i), mesh.getY(i), 0));
-		std::cout << *jacoby << std::endl << std::endl;
-		localHMatricies.push_back(std::move(solver.getHMatrix(eta, ksi, jacoby, 25)));
+		//auto jacoby (solver.getJacobyMatrix2(eta, ksi, mesh.getX(i), mesh.getY(i), 0));
+		//std::cout << *jacoby << std::endl << std::endl;
+		std::cout << "Element " << i << std::endl;
+		localHMatricies.push_back(std::move(solver.getHMatrix(eta, ksi, mesh.getX(i),mesh.getY(i), 25)));
 		//localCMatricies.push_back(solver.getCMatrix(elem,jacoby,ro,temp));
 		nodes.push_back(mesh.getElementNodesIndexes(i));
 	}

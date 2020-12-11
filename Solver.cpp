@@ -6,6 +6,31 @@
 #include <vector>
 #include <array>
 #include "InputData.h"
+
+namespace {
+	std::vector<double> generateGaussIntegrationalPoints(size_t scheme) {
+		std::vector<double> points;
+		switch (scheme) {
+		case 2: {
+			points.push_back(-1 / sqrt(3.0));
+			points.push_back(1 / sqrt(3.0));
+		}break;
+		case 3: {
+			points.push_back(-std::sqrt(3.0 / 5.0));
+			points.push_back(0.0);
+			points.push_back(std::sqrt(3.0 / 5.0));
+		}break;
+		case 4: {
+			points.push_back(-1.0*std::sqrt(3.0 / 7.0 + 2.0 / 7.0*std::sqrt(1.2)));
+			points.push_back(-1.0*std::sqrt(3.0 / 7.0 - 2.0 / 7.0*std::sqrt(1.2)));
+			points.push_back(std::sqrt(3.0 / 7.0 - 2.0 / 7.0*std::sqrt(1.2)));
+			points.push_back(std::sqrt(3.0 / 7.0 + 2.0 / 7.0*std::sqrt(1.2)));
+		}break;
+		}
+		return points;
+	}
+}
+
 namespace slv {
 	Solver::Solver(int points)
 	{
@@ -16,15 +41,15 @@ namespace slv {
 			tempData[1] = 1;
 		}
 		else if (points == 3) {
-			tempData[0] = 0.55;
-			tempData[1] = 0.88;
-			tempData[2] = 0.55;
+			tempData[0] = 5.0 / 9.0;// 0.55;
+			tempData[1] = 8.0 / 9.0;// 0.88;
+			tempData[2] = 5.0 / 9.0;// 0.55;
 		}
 		else {
-			tempData[0] = 0.347;
-			tempData[1] = 0.652;
-			tempData[2] = 0.652;
-			tempData[3] = 0.347;
+			tempData[0] = (18.0 - std::sqrt(30.0)) / 36.0;// 0.347;
+			tempData[1] = (18.0 + std::sqrt(30.0)) / 36.0;//0.652;
+			tempData[2] = (18.0 + std::sqrt(30.0)) / 36.0;//0.652;
+			tempData[3] = (18.0 - std::sqrt(30.0)) / 36.0;// 0.347;
 		}
 		for (size_t i = 0; i < points; ++i)
 		{
@@ -36,139 +61,32 @@ namespace slv {
 		delete tempData;
 	}
 
-	MatSPtr Solver::getEtaMatrix()
+	MatSPtr Solver::getLocalMatrixOfLocalDerivatives(LocalType type)
 	{
-		int size = std::pow(this->gaussIntegralScheme, 2);
+		int noIntPoints = this->gaussIntegralScheme;
+		size_t size = std::pow(this->gaussIntegralScheme, 2);
 		auto matrix = std::make_shared<Matrix>(4, size);
-		if (size == 4)
-		{
-			double ksi = 1 / sqrt(3);
-			for (int i = 0; i < 4; i++)
+		std::vector<double> points= std::move(generateGaussIntegrationalPoints(noIntPoints)) ;
+		switch (type) {
+		case LocalType::ETA: {
+			for (size_t i = 0; i < size; i++)
 			{
-				ksi *= -1;
-				matrix->operator()(i, 0) = (ksi - 1) / 4;
-				matrix->operator()(i, 1) = (-ksi - 1) / 4;
-				matrix->operator()(i, 2) = (ksi + 1) / 4;
-				matrix->operator()(i, 3) = (-ksi + 1) / 4;
+				matrix->operator()(0, i) = -0.25*(1 - points.at(i % noIntPoints));
+				matrix->operator()(1, i) = -0.25*(1 + points.at(i % noIntPoints));
+				matrix->operator()(2, i) = 0.25*(points.at(i % noIntPoints) + 1);
+				matrix->operator()(3, i) = 0.25*(-points.at(i % noIntPoints) + 1);
 			}
-			return matrix;
-		}
-		else if (size == 9)
-		{
-			double values[12] = { -0.04365,-0.25,-0.05635 ,-0.05635,-0.25,-0.44365,0.05635,0.25,0.44365,0.44365,0.25,0.05635 };
-			for (int i = 0, c = 0; i < 4; i++, c++)
+			}break;
+		case LocalType::KSI: {
+			for (size_t i = 0; i < size; i++)
 			{
-				matrix->operator()(i, 0) = values[c * 3];
-				matrix->operator()(i, 1) = matrix->operator()(i, 0);
-				matrix->operator()(i, 2) = matrix->operator()(i, 0);
-				matrix->operator()(i, 3) = values[c * 3 + 1];
-				matrix->operator()(i, 4) = matrix->operator()(i, 3);
-				matrix->operator()(i, 5) = matrix->operator()(i, 3);
-				matrix->operator()(i, 6) = values[c * 3 + 2];
-				matrix->operator()(i, 7) = matrix->operator()(i, 6);
-				matrix->operator()(i, 8) = matrix->operator()(i, 6);
+				matrix->operator()(0, i) = -0.25*(1 - points.at(i % noIntPoints));
+				matrix->operator()(1, i) = 0.25*(-points.at(i % noIntPoints) + 1);
+				matrix->operator()(2, i) = 0.25*(points.at(i % noIntPoints) + 1);
+				matrix->operator()(3, i) = -0.25*(points.at(i % noIntPoints) + 1);
 			}
-			return matrix;
 		}
-		else if (size == 16) //need to be checked if is correct
-		{
-			double values[16] = { -0.46528,-0.335,-0.165,-0.3472,0.465284,0.334995,0.165005,0.034716,0.034716 ,0.165005,0.334995,0.465284,-0.03472,-0.165,-0.335,-0.46528 };
-			for (int i = 0, c = 0; i < 4; i++, c++)
-			{
-				matrix->operator()(i, 0) = values[c * 4];
-				matrix->operator()(i, 1) = values[c * 4];
-				matrix->operator()(i, 2) = values[c * 4];
-				matrix->operator()(i, 3) = values[c * 4];
-				matrix->operator()(i, 4) = values[c * 4 + 1];
-				matrix->operator()(i, 5) = values[c * 4 + 1];
-				matrix->operator()(i, 6) = values[c * 4 + 1];
-				matrix->operator()(i, 7) = values[c * 4 + 1];
-				matrix->operator()(i, 8) = values[c * 4 + 2];
-				matrix->operator()(i, 9) = values[c * 4 + 2];
-				matrix->operator()(i, 10) = values[c * 4 + 2];
-				matrix->operator()(i, 11) = values[c * 4 + 2];
-				matrix->operator()(i, 12) = values[c * 4 + 3];
-				matrix->operator()(i, 13) = values[c * 4 + 3];
-				matrix->operator()(i, 14) = values[c * 4 + 3];
-				matrix->operator()(i, 15) = values[c * 4 + 3];
-			}
-			return matrix;
 		}
-	}
-
-	MatSPtr Solver::getKsiMatrix()
-	{
-		int size = std::pow(this->gaussIntegralScheme, 2);
-		auto matrix = std::make_shared<Matrix>(4, size);
-		if (size == 4)
-		{
-			double eta = 1 / sqrt(3);
-			for (int i = 0; i < 4; i++)
-			{
-				eta *= -1;
-				matrix->operator()(i, 0) = (eta - 1) / 4;
-				matrix->operator()(i, 1) = (-eta + 1) / 4;
-				matrix->operator()(i, 2) = (eta + 1) / 4;
-				matrix->operator()(i, 3) = (-eta - 1) / 4;
-			}
-			return matrix;
-		}
-		else if (size == 9)
-		{
-			double values[12] = { -0.04365,-0.25,-0.05635 ,0.04365,0.25,0.05635,0.05635,0.25,0.44365,-0.05635,-0.25,-0.44365 };
-			for (int i = 0, c = 0; i < 4; i++, c++)
-			{
-				matrix->operator()(i, 0) = values[c * 3 + 0];
-				matrix->operator()(i, 1) = values[c * 3 + 1];
-				matrix->operator()(i, 2) = values[c * 3 + 2];
-				matrix->operator()(i, 3) = matrix->operator()(i, 0);
-				matrix->operator()(i, 4) = matrix->operator()(i, 1);
-				matrix->operator()(i, 5) = matrix->operator()(i, 2);
-				matrix->operator()(i, 6) = matrix->operator()(i, 0);
-				matrix->operator()(i, 7) = matrix->operator()(i, 1);
-				matrix->operator()(i, 8) = matrix->operator()(i, 2);
-			}
-			return matrix;
-		}
-		else if (size == 16)
-		{
-			double values[16] = { -0.46528,-0.335,-0.165,-0.3472,0.465284,0.334995,0.165005,0.034716,0.034716 ,0.165005,0.334995,0.465284,-0.03472,-0.165,-0.335,-0.46528 };
-			for (int i = 0, c = 0; i < 4; i++, c++)
-			{
-				matrix->operator()(i, 0) = values[c * 4];
-				matrix->operator()(i, 1) = values[c * 4 + 1];
-				matrix->operator()(i, 2) = values[c * 4 + 2];
-				matrix->operator()(i, 3) = values[c * 4 + 3];
-				matrix->operator()(i, 4) = values[c * 4];
-				matrix->operator()(i, 5) = values[c * 4 + 1];
-				matrix->operator()(i, 6) = values[c * 4 + 2];
-				matrix->operator()(i, 7) = values[c * 4 + 3];
-				matrix->operator()(i, 8) = values[c * 4];
-				matrix->operator()(i, 9) = values[c * 4 + 1];
-				matrix->operator()(i, 10) = values[c * 4 + 2];
-				matrix->operator()(i, 11) = values[c * 4 + 3];
-				matrix->operator()(i, 12) = values[c * 4];
-				matrix->operator()(i, 13) = values[c * 4 + 1];
-				matrix->operator()(i, 14) = values[c * 4 + 2];
-				matrix->operator()(i, 15) = values[c * 4 + 3];
-			}
-			return matrix;
-		}
-	}
-
-	MatSPtr Solver::getJacobyMatrix2(MatSPtr& eta, MatSPtr& ksi, double* x, double* y, int point)
-	{
-		auto matrix = std::make_shared<Matrix>(2);
-		const int size = std::pow(this->gaussIntegralScheme, 2);
-		for (int i = 0; i < size; i++)
-			matrix->operator()(0, 0) += x[i] * (*ksi).operator()(point, i);
-		for (int i = 0; i < size; i++)
-			matrix->operator()(0, 1) += y[i] * (*ksi).operator()(point, i);
-		for (int i = 0; i < size; i++)
-			matrix->operator()(1, 0) += x[i] * (*eta).operator()(point, i);
-		for (int i = 0; i < size; i++)
-			matrix->operator()(1, 1) += y[i] * (*eta).operator()(point, i);
-
 		return matrix;
 	}
 
@@ -183,10 +101,8 @@ namespace slv {
 	VecSPtr Solver::getVectorOfDerivatives(MatSPtr& ksi, MatSPtr& eta, int fShape, int point)
 	{
 		auto vec = std::make_shared<Vector>(2);
-		//vec->operator()(0) = ksi(point, fShape);
-		//vec->operator()(1) = eta(point, fShape);
 		vec->operator()(0) = ksi->operator()(fShape, point);
-		vec->operator()(1) = eta->operator()(fShape, point); //check!!!
+		vec->operator()(1) = eta->operator()(fShape, point);
 		return vec;
 	}
 
@@ -214,20 +130,22 @@ namespace slv {
 	{
 		auto result = getXYDerivativesForPoint(eta, ksi, jacoby, point);
 		auto H1 = vecAndvecTMultiplication(*result[0]);
-		auto H2 = vecAndvecTMultiplication(*result[0]); //?????????????????????????????????????????
+		auto H2 = vecAndvecTMultiplication(*result[0]); //?????????????????
 		//delete result;
 		auto mat = std::make_unique<Matrix>(4);
 		*mat = H1->operator+= (*H2);
 		return mat;
 	}
 
-	MatUPtr Solver::getHMatrix(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, double k)
+	MatUPtr Solver::getHMatrix(MatSPtr& eta, MatSPtr& ksi, double* X, double*Y,double k)
 	{
-		double detJ = determinantMat2(*jacoby);
 		auto H = std::make_unique<Matrix>(4);
 		const int size = std::pow(this->gaussIntegralScheme, 2);
+
 		for (int i = 0; i < size; i++)
 		{
+			auto jacoby = this->getJacobyMatrix2(eta, ksi, X, Y, i);
+			double detJ = determinantMat2(*jacoby);
 			auto buffer = std::move(this->getHSumbatricies(eta, ksi, jacoby, i));
 			*buffer *= k * detJ;
 			*buffer *= this->wages[i];

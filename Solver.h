@@ -14,12 +14,13 @@ namespace slv {
 	using MatSPtr = std::shared_ptr<Matrix>;
 	using MatUPtr = std::unique_ptr<Matrix>;
 
+	enum LocalType{ETA, KSI};
+
 	class Solver {
 	public:
 		Solver(int points);
 
-		MatSPtr getEtaMatrix();
-		MatSPtr getKsiMatrix();
+		MatSPtr getLocalMatrixOfLocalDerivatives(LocalType type);
 		Matrix* getNMatrix();
 
 		MatSPtr getJacobyMatrix2(MatSPtr& eta, MatSPtr& ksi, double* x, double* y, int point);
@@ -29,7 +30,7 @@ namespace slv {
 		std::vector<VecSPtr> getXYDerivativesForPoint(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point);
 		
 		MatUPtr getHSumbatricies(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point);
-		MatUPtr getHMatrix(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, double k);
+		MatUPtr getHMatrix(MatSPtr& eta, MatSPtr& ksi, double*X, double*Y, double k);
 		/*
 		MatUPtr getCLocalMatrix(double Eta, double Ksi);
 		MatUPtr getCMatrix(data::Elem4& data, MatSPtr& jacoby, double ro, double temp);

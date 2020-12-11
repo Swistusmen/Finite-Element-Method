@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include "Algebra.h"
 
 
@@ -344,7 +345,9 @@
 		{
 			for (int j = 0; j < size; j++)
 			{
-				mat->operator()(i, j) = a(i)*a(j);
+				mat->operator()(i, j) =  a(i)*a(j);
+				//if ((mat->operator()(i, j) < 0.000001) && (0.0 != mat->operator()(i, j)))
+				//	mat->operator()(i, j) = 0.0;
 			}
 		}
 		return mat;
