@@ -32,6 +32,22 @@ namespace {
 }
 
 namespace slv {
+	LocalOperations::LocalOperations()
+	{
+		Ksi.push_back([](double a) {return -0.25*(1 - a); });
+		Ksi.push_back([](double a) {return 0.25*(-a + 1); });
+		Ksi.push_back([](double a) {return 0.25*(a + 1); });
+		Ksi.push_back([](double a) {return -0.25*(1 + a); });
+		Eta.push_back([](double a) {return -0.25*(1 - a); });
+		Eta.push_back([](double a) {return -0.25*(1 + a); });
+		Eta.push_back([](double a) {return 0.25*(a + 1); });
+		Eta.push_back([](double a) {return 0.25*(-a + 1); });	
+		Shape.push_back([](double e, double n) {return 0.25*(1 - e)*(1 - n); });
+		Shape.push_back([](double e, double n) {return 0.25*(1 + e)*(1 - n); });
+		Shape.push_back([](double e, double n) {return 0.25*(1 + e)*(1 + n); });
+		Shape.push_back([](double e, double n) {return 0.25*(1 - e)*(1 + n); });
+	}
+
 	Solver::Solver(int points)
 	{
 		this->gaussIntegralScheme = points;
@@ -61,32 +77,46 @@ namespace slv {
 		delete tempData;
 	}
 
-	MatSPtr Solver::getLocalMatrixOfLocalDerivatives(LocalType type)
+	MatSPtr Solver::getLocalMatrixOfLocalTransformation(LocalType type)
 	{
 		int noIntPoints = this->gaussIntegralScheme;
 		size_t size = std::pow(this->gaussIntegralScheme, 2);
 		auto matrix = std::make_shared<Matrix>(4, size);
 		std::vector<double> points= std::move(generateGaussIntegrationalPoints(noIntPoints)) ;
 		switch (type) {
-		case LocalType::ETA: {
+		case LocalType::ETA: case LocalType::KSI: {
+			auto functions = localOperations.getFunctions(type);
 			for (size_t i = 0; i < size; i++)
 			{
-				matrix->operator()(0, i) = -0.25*(1 - points.at(i % noIntPoints));
-				matrix->operator()(1, i) = -0.25*(1 + points.at(i % noIntPoints));
-				matrix->operator()(2, i) = 0.25*(points.at(i % noIntPoints) + 1);
-				matrix->operator()(3, i) = 0.25*(-points.at(i % noIntPoints) + 1);
+				for (size_t j = 0; j < 4; j++)
+					matrix->operator()(j, i) = functions.at(j)(points.at(i % noIntPoints));
 			}
-			}break;
-		case LocalType::KSI: {
+		}break;
+		case LocalType::SHAPE: {
 			for (size_t i = 0; i < size; i++)
 			{
-				matrix->operator()(0, i) = -0.25*(1 - points.at(i % noIntPoints));
-				matrix->operator()(1, i) = 0.25*(-points.at(i % noIntPoints) + 1);
-				matrix->operator()(2, i) = 0.25*(points.at(i % noIntPoints) + 1);
-				matrix->operator()(3, i) = -0.25*(points.at(i % noIntPoints) + 1);
+				for (size_t j = 0; j < 4; j++)
+					matrix->operator()(j, i) = (localOperations.Shape.at(j))(points.at(i % noIntPoints),
+						points.at(static_cast<int>(i/noIntPoints)));
 			}
+		}break;
 		}
-		}
+		return matrix;
+	}
+
+	MatSPtr Solver::getJacobyMatrix2(MatSPtr& eta, MatSPtr& ksi, double* x, double* y, int point)
+	{
+		auto matrix = std::make_shared<Matrix>(2);
+		const int size = 4;
+		for (int i = 0; i < size; i++)
+			matrix->operator()(0, 0) += x[i] * (*ksi).operator()(i,point);
+		for (int i = 0; i < size; i++)
+			matrix->operator()(0, 1) += y[i] * (*ksi).operator()(i,point);
+		for (int i = 0; i < size; i++)
+			matrix->operator()(1, 0) += x[i] * (*eta).operator()(i,point);
+		for (int i = 0; i < size; i++)
+			matrix->operator()(1, 1) += y[i] * (*eta).operator()(i,point);
+
 		return matrix;
 	}
 

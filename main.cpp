@@ -20,9 +20,9 @@ int main()
 	
 	int numberOfIntegrationalPoints = 3;
 
-	slv::Solver solver(2);
-	auto eta (solver.getLocalMatrixOfLocalDerivatives(slv::LocalType::ETA)); 
-	auto ksi(solver.getLocalMatrixOfLocalDerivatives(slv::LocalType::KSI)); 
+	slv::Solver solver(4);
+	auto eta (solver.getLocalMatrixOfLocalTransformation(slv::LocalType::ETA));
+	auto ksi(solver.getLocalMatrixOfLocalTransformation(slv::LocalType::KSI));
 	const int size = mesh.maxIndexOfElement();
 	std::cout << "Eta matrix\n"<<*eta << std::endl;
 	std::cout << "Ksi matrix\n"<< *ksi << std::endl;
@@ -42,7 +42,7 @@ int main()
 	{
 		//auto jacoby (solver.getJacobyMatrix2(eta, ksi, mesh.getX(i), mesh.getY(i), 0));
 		//std::cout << *jacoby << std::endl << std::endl;
-		std::cout << "Element " << i << std::endl;
+		
 		localHMatricies.push_back(std::move(solver.getHMatrix(eta, ksi, mesh.getX(i),mesh.getY(i), 25)));
 		//localCMatricies.push_back(solver.getCMatrix(elem,jacoby,ro,temp));
 		nodes.push_back(mesh.getElementNodesIndexes(i));
