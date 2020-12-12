@@ -20,15 +20,17 @@ int main()
 	
 	int numberOfIntegrationalPoints = 3;
 
-	slv::Solver solver(4);
-	auto eta (solver.getLocalMatrixOfLocalTransformation(slv::LocalType::ETA));
-	auto ksi(solver.getLocalMatrixOfLocalTransformation(slv::LocalType::KSI));
+	slv::Solver solver(2);
+	auto eta (solver.getMatrixOfLocalTransformation(slv::LocalType::ETA));
+	auto ksi(solver.getMatrixOfLocalTransformation(slv::LocalType::KSI));
+	auto shape(solver.getMatrixOfLocalTransformation(slv::LocalType::SHAPE));
+	//std::cout << "Shape\n" << *shape << std::endl;
 	const int size = mesh.maxIndexOfElement();
-	std::cout << "Eta matrix\n"<<*eta << std::endl;
-	std::cout << "Ksi matrix\n"<< *ksi << std::endl;
+	//std::cout << "Eta matrix\n"<<*eta << std::endl;
+	//std::cout << "Ksi matrix\n"<< *ksi << std::endl;
 	
 	std::vector<slv::MatUPtr> localHMatricies;
-	//std::vector<slv::MatUPtr> localCMatricies;
+	std::vector<slv::MatUPtr> localCMatricies;
 	std::vector<std::array<int, 4>> nodes;
 	
 	/*
@@ -38,25 +40,28 @@ int main()
 	*/
 
 	std::cout << size << std::endl;
+	std::vector<double> HMultipliers;
+	HMultipliers.push_back(25.0);
+	std::vector<double> CMultipliers;
+	CMultipliers.push_back(700.0);
+	CMultipliers.push_back(7800.0);
 	for (int i = 1; i <= size; i++)
 	{
-		//auto jacoby (solver.getJacobyMatrix2(eta, ksi, mesh.getX(i), mesh.getY(i), 0));
-		//std::cout << *jacoby << std::endl << std::endl;
-		
-		localHMatricies.push_back(std::move(solver.getHMatrix(eta, ksi, mesh.getX(i),mesh.getY(i), 25)));
-		//localCMatricies.push_back(solver.getCMatrix(elem,jacoby,ro,temp));
+		localHMatricies.push_back(std::move(solver.getMatrixForElement(slv::MatrixType::H, mesh.getX(i),mesh.getY(i), HMultipliers)));
+		localCMatricies.push_back(std::move(solver.getMatrixForElement(slv::MatrixType::C, mesh.getX(i), mesh.getY(i), CMultipliers)));
 		nodes.push_back(mesh.getElementNodesIndexes(i));
+		//std::cout << *localCMatricies.back() << std::endl;
 	}
 	int sizeOfGlobalMatrix = mesh.getNH()*mesh.getNW();
 	Matrix globalHMat(sizeOfGlobalMatrix);
 	solver.aggregateGlobalMatrix(globalHMat, localHMatricies, nodes);
 	std::cout << globalHMat << std::endl;
 	
-	/*
+	
 	Matrix globalCMat(sizeOfGlobalMatrix);
 	solver.aggregateGlobalMatrix(globalCMat, localCMatricies, nodes);
 	std::cout << globalCMat << std::endl;
-	*/
+	
 	system("pause");
 	return 0;
 }

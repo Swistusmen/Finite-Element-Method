@@ -75,9 +75,13 @@ namespace slv {
 			}
 		}
 		delete tempData;
+
+		Eta = (getMatrixOfLocalTransformation(LocalType::ETA));
+		Ksi = (getMatrixOfLocalTransformation(LocalType::KSI));
+		Shape = (getMatrixOfLocalTransformation(LocalType::SHAPE));
 	}
 
-	MatSPtr Solver::getLocalMatrixOfLocalTransformation(LocalType type)
+	MatSPtr Solver::getMatrixOfLocalTransformation(LocalType type)
 	{
 		int noIntPoints = this->gaussIntegralScheme;
 		size_t size = std::pow(this->gaussIntegralScheme, 2);
@@ -104,18 +108,18 @@ namespace slv {
 		return matrix;
 	}
 
-	MatSPtr Solver::getJacobyMatrix2(MatSPtr& eta, MatSPtr& ksi, double* x, double* y, int point)
+	MatSPtr Solver::getJacobyMatrix2( double* x, double* y, int point)
 	{
 		auto matrix = std::make_shared<Matrix>(2);
-		const int size = 4;
-		for (int i = 0; i < size; i++)
-			matrix->operator()(0, 0) += x[i] * (*ksi).operator()(i,point);
-		for (int i = 0; i < size; i++)
-			matrix->operator()(0, 1) += y[i] * (*ksi).operator()(i,point);
-		for (int i = 0; i < size; i++)
-			matrix->operator()(1, 0) += x[i] * (*eta).operator()(i,point);
-		for (int i = 0; i < size; i++)
-			matrix->operator()(1, 1) += y[i] * (*eta).operator()(i,point);
+		const size_t size = 4;
+		for (size_t i = 0; i < size; i++)
+			matrix->operator()(0, 0) += x[i] * (*Ksi).operator()(i,point);
+		for (size_t i = 0; i < size; i++)
+			matrix->operator()(0, 1) += y[i] * (*Ksi).operator()(i,point);
+		for (size_t i = 0; i < size; i++)
+			matrix->operator()(1, 0) += x[i] * (*Eta).operator()(i,point);
+		for (size_t i = 0; i < size; i++)
+			matrix->operator()(1, 1) += y[i] * (*Eta).operator()(i,point);
 
 		return matrix;
 	}
@@ -128,15 +132,15 @@ namespace slv {
 		return vec;
 	}
 
-	VecSPtr Solver::getVectorOfDerivatives(MatSPtr& ksi, MatSPtr& eta, int fShape, int point)
+	VecSPtr Solver::getVectorOfDerivatives(int fShape, int point)
 	{
 		auto vec = std::make_shared<Vector>(2);
-		vec->operator()(0) = ksi->operator()(fShape, point);
-		vec->operator()(1) = eta->operator()(fShape, point);
+		vec->operator()(0) = Ksi->operator()(fShape, point);
+		vec->operator()(1) = Eta->operator()(fShape, point);
 		return vec;
 	}
 
-	std::vector<VecSPtr> Solver::getXYDerivativesForPoint(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point)
+	std::vector<VecSPtr> Solver::getXYDerivativesForPoint( MatSPtr& jacoby, int point)
 	{
 		std::vector<VecSPtr> xy;
 		xy.push_back(std::make_shared<Vector>(4));
@@ -146,7 +150,7 @@ namespace slv {
 		{
 			auto mat=std::make_unique<Matrix>(*jacoby);
 			inverseMat2(*mat);
-			auto vec = this->getVectorOfDerivatives(ksi, eta, i, point);
+			auto vec = this->getVectorOfDerivatives( i, point);
 			auto buffer = this->getDerivativeOfNByCoordinate_XY(*mat, determinantMat2(*jacoby),vec);
 			xy[0]->operator()(i) = (*buffer)(0);
 			xy[1]->operator()(i) = (*buffer)(1);
@@ -156,28 +160,41 @@ namespace slv {
 	}
 
 
-	MatUPtr Solver::getHSumbatricies(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point)
+	MatUPtr Solver::getMatrixForPoint(MatrixType type, double* X, double*Y, int point)
 	{
-		auto result = getXYDerivativesForPoint(eta, ksi, jacoby, point);
-		auto H1 = vecAndvecTMultiplication(*result[0]);
-		auto H2 = vecAndvecTMultiplication(*result[0]); //?????????????????
-		//delete result;
+		auto jacoby = this->getJacobyMatrix2(X, Y, point);
+		double detJ = determinantMat2(*jacoby);
 		auto mat = std::make_unique<Matrix>(4);
-		*mat = H1->operator+= (*H2);
+		if (type == MatrixType::H) {
+			auto result = getXYDerivativesForPoint(jacoby, point);
+			auto H1 = vecAndvecTMultiplication(*result[0]);
+			auto H2 = vecAndvecTMultiplication(*result[0]); //?????????????????
+			//delete result;
+			*mat = H1->operator+= (*H2);
+		}
+		else if (type == MatrixType::C) {
+			auto vec = std::make_shared<Vector>(4);
+			for (size_t i = 0; i < 4; i++) {
+				vec->operator()(i)=Shape->operator()(i, point);
+			}
+			mat = std::move(vecAndvecTMultiplication(*vec));// dostan wektor funkcji ksztaltu dla punktu
+		}
+		*mat *= detJ;
 		return mat;
 	}
 
-	MatUPtr Solver::getHMatrix(MatSPtr& eta, MatSPtr& ksi, double* X, double*Y,double k)
-	{
+	MatUPtr Solver::getMatrixForElement(MatrixType type,double*X, double*Y,std::vector<double>& multipliers)
+	{//matricies, coordinates, multipliers
 		auto H = std::make_unique<Matrix>(4);
 		const int size = std::pow(this->gaussIntegralScheme, 2);
+		const size_t noMultipliers = multipliers.size();
 
 		for (int i = 0; i < size; i++)
 		{
-			auto jacoby = this->getJacobyMatrix2(eta, ksi, X, Y, i);
-			double detJ = determinantMat2(*jacoby);
-			auto buffer = std::move(this->getHSumbatricies(eta, ksi, jacoby, i));
-			*buffer *= k * detJ;
+			auto buffer = std::move(this->getMatrixForPoint(type, X, Y, i));
+			for (size_t j = 0; j < noMultipliers; j++) {
+				*buffer *= multipliers.at(j);
+			}
 			*buffer *= this->wages[i];
 			H->operator+=(*buffer);
 		}
@@ -200,36 +217,4 @@ namespace slv {
 			}
 		}
 	}
-	/*
-	MatUPtr Solver::getCLocalMatrix(double Eta, double Ksi)
-	{
-		Vector* vec = new Vector(4);
-		vec->operator()(0) = 0.25*(1 - Eta)*(1 - Ksi);
-		vec->operator()(1) = 0.25*(1 - Eta)*(1 + Ksi);
-		vec->operator()(2) = 0.25*(1 + Eta)*(1 + Ksi);
-		vec->operator()(3) = 0.25*(1 + Eta)*(1 - Ksi);
-		auto mat = std::make_unique<Matrix>( std::move(vecAndvecTMultiplication(*vec)));
-		return mat;
-	}
-
-	MatUPtr Solver::getCMatrix(data::Elem4& data, MatSPtr& jacoby, double ro, double temp)
-	{
-		size_t size = this->gaussIntegralScheme;
-		double det = determinantMat2(*jacoby);
-
-		auto mat = std::make_unique<Matrix>();
-		for (size_t i = 0; i < size; ++i)
-		{
-			for (size_t j = 0; j < size; j++)
-			{
-				auto buffer = this->getCLocalMatrix(data.tabEta[i], data.tabKsi[j]);
-				*buffer *= ro;
-				*buffer *= temp;
-				*buffer *= det;
-				mat->operator +=(*buffer);
-			}
-		}
-		return mat;
-	}
-	*/
 };

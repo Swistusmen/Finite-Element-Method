@@ -24,8 +24,8 @@
 		friend std::ostream& operator<< (std::ostream& os, const Matrix& mat);
 		friend Matrix& operator/ (Matrix& mat, double scalar);
 		friend Matrix& operator+ (Matrix& mat, double scalar);
-		friend std::shared_ptr<Matrix> operator+ (Matrix& mat, Matrix& tab); //TODO
-		friend std::unique_ptr<Matrix> operator* (Matrix& mat, Matrix& mat1); //TODO
+		friend std::shared_ptr<Matrix> operator+ (Matrix& mat, Matrix& tab); 
+		friend std::unique_ptr<Matrix> operator* (Matrix& mat, Matrix& mat1); 
 
 	protected:
 		unsigned int sizeH, sizeW;

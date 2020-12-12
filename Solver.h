@@ -15,6 +15,7 @@ namespace slv {
 	using MatUPtr = std::unique_ptr<Matrix>;
 
 	enum LocalType{ETA, KSI,SHAPE};
+	enum MatrixType {H , C};
 
 	struct LocalOperations {
 		LocalOperations();
@@ -30,22 +31,28 @@ namespace slv {
 	public:
 		Solver(int points);
 
-		MatSPtr getLocalMatrixOfLocalTransformation(LocalType type);
+		MatSPtr getMatrixOfLocalTransformation(LocalType type);
 
-		MatSPtr getJacobyMatrix2(MatSPtr& eta, MatSPtr& ksi, double* x, double* y, int point);
-		VecSPtr getVectorOfDerivatives(MatSPtr& ksi, MatSPtr& eta, int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
+		MatSPtr getJacobyMatrix2(double* x, double* y, int point);
+		VecSPtr getVectorOfDerivatives( int fShape, int point); //zwaraca 1 pochodn ksi i eta w wektorze dla odpowiedniej funkcji kszta³tu i pc
 
 		VecSPtr getDerivativeOfNByCoordinate_XY(Matrix& inversedJacoby, double detJ, VecSPtr& derivatives); //derivate of shape funciton and cooridnate
-		std::vector<VecSPtr> getXYDerivativesForPoint(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point);
+		std::vector<VecSPtr> getXYDerivativesForPoint(MatSPtr& jacoby, int point);
 		
-		MatUPtr getHSumbatricies(MatSPtr& eta, MatSPtr& ksi, MatSPtr& jacoby, int point);
-		MatUPtr getHMatrix(MatSPtr& eta, MatSPtr& ksi, double*X, double*Y, double k);
+		MatUPtr getMatrixForPoint(MatrixType type,  double* X, double*Y, int point);
+		MatUPtr getMatrixForElement(MatrixType type, double*X, double*Y, 
+			std::vector<double>& multipliers);
 		
 		void aggregateGlobalMatrix(Matrix& mat, std::vector<MatUPtr>& locals, std::vector<std::array<int, 4>>& nodes);
 	private:
 		int gaussIntegralScheme;
 		std::vector<double> wages;
 		LocalOperations localOperations;
+
+		MatSPtr Eta=nullptr;
+		MatSPtr Ksi=nullptr;
+		MatSPtr Shape=nullptr;
+
 	};
 
 }
