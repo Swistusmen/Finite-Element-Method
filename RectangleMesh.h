@@ -16,7 +16,6 @@ namespace data {
 
 		int getNH();
 		int getNW();
-
 	private:
 		float h, w; 
 		Element** elements;

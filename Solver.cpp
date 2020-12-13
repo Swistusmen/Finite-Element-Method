@@ -8,85 +8,66 @@
 #include "InputData.h"
 
 namespace {
-	std::vector<double> generateGaussIntegrationalPoints(size_t scheme) {
-		std::vector<double> points;
-		switch (scheme) {
-		case 2: {
-			points.push_back(-1 / sqrt(3.0));
-			points.push_back(1 / sqrt(3.0));
-		}break;
-		case 3: {
-			points.push_back(-std::sqrt(3.0 / 5.0));
-			points.push_back(0.0);
-			points.push_back(std::sqrt(3.0 / 5.0));
-		}break;
-		case 4: {
-			points.push_back(-1.0*std::sqrt(3.0 / 7.0 + 2.0 / 7.0*std::sqrt(1.2)));
-			points.push_back(-1.0*std::sqrt(3.0 / 7.0 - 2.0 / 7.0*std::sqrt(1.2)));
-			points.push_back(std::sqrt(3.0 / 7.0 - 2.0 / 7.0*std::sqrt(1.2)));
-			points.push_back(std::sqrt(3.0 / 7.0 + 2.0 / 7.0*std::sqrt(1.2)));
-		}break;
+	std::vector<double> getWagesOneDimension(int scheme)
+	{
+		std::vector<double> wagesOneDimension;
+		if (scheme == 2) {
+			wagesOneDimension.push_back(1);
+			wagesOneDimension.push_back(1);
 		}
-		return points;
+		else if (scheme == 3) {
+			wagesOneDimension.push_back(5.0 / 9.0);
+			wagesOneDimension.push_back(8.0 / 9.0);
+			wagesOneDimension.push_back(5.0 / 9.0);
+		}
+		else {
+			wagesOneDimension.push_back((18.0 - std::sqrt(30.0)) / 36.0);
+			wagesOneDimension.push_back((18.0 + std::sqrt(30.0)) / 36.0);
+			wagesOneDimension.push_back((18.0 + std::sqrt(30.0)) / 36.0);
+			wagesOneDimension.push_back((18.0 - std::sqrt(30.0)) / 36.0);
+		}
+		return wagesOneDimension;
+	}
+
+	std::vector<double> getWagesTwoDimensions(int scheme)
+	{
+		std::vector<double> wagesOne = std::move(getWagesOneDimension(scheme));
+		std::vector<double> wagesTwoDimension;
+			for (size_t i = 0; i < scheme; ++i)
+			{
+				for (size_t j = 0; j < scheme; ++j)
+				{
+					wagesTwoDimension.push_back(wagesOne[i] * wagesOne[j]);
+				}
+			}
+			return wagesTwoDimension;
 	}
 }
 
 namespace slv {
-	LocalOperations::LocalOperations()
+	Solver::Solver(LocalOperations& localOperations, IntegrationalPoints& iPoints,int scheme,data::RectangleMeshInput& data)
 	{
-		Ksi.push_back([](double a) {return -0.25*(1 - a); });
-		Ksi.push_back([](double a) {return 0.25*(-a + 1); });
-		Ksi.push_back([](double a) {return 0.25*(a + 1); });
-		Ksi.push_back([](double a) {return -0.25*(1 + a); });
-		Eta.push_back([](double a) {return -0.25*(1 - a); });
-		Eta.push_back([](double a) {return -0.25*(1 + a); });
-		Eta.push_back([](double a) {return 0.25*(a + 1); });
-		Eta.push_back([](double a) {return 0.25*(-a + 1); });	
-		Shape.push_back([](double e, double n) {return 0.25*(1 - e)*(1 - n); });
-		Shape.push_back([](double e, double n) {return 0.25*(1 + e)*(1 - n); });
-		Shape.push_back([](double e, double n) {return 0.25*(1 + e)*(1 + n); });
-		Shape.push_back([](double e, double n) {return 0.25*(1 - e)*(1 + n); });
+		this->gaussIntegralScheme = scheme;
+		this->wagesOneDim = getWagesOneDimension(scheme);
+		this->wagesTwoDim = getWagesTwoDimensions(scheme);
+		this->iPoints = iPoints;
+		this->localOperations = localOperations;
+
+		//Resolution only for rectangle
+		this->HBound = data.H;
+		this->WBound = data.W;
+
+		this->Eta = (getMatrixOfLocalTransformation(LocalType::ETA));
+		this->Ksi = (getMatrixOfLocalTransformation(LocalType::KSI));
+		this->Shape = (getMatrixOfLocalTransformation(LocalType::SHAPE2D));
 	}
-
-	Solver::Solver(int points)
-	{
-		this->gaussIntegralScheme = points;
-		double *tempData = new double[points];
-		if (points == 2) {
-			tempData[0] = 1;
-			tempData[1] = 1;
-		}
-		else if (points == 3) {
-			tempData[0] = 5.0 / 9.0;// 0.55;
-			tempData[1] = 8.0 / 9.0;// 0.88;
-			tempData[2] = 5.0 / 9.0;// 0.55;
-		}
-		else {
-			tempData[0] = (18.0 - std::sqrt(30.0)) / 36.0;// 0.347;
-			tempData[1] = (18.0 + std::sqrt(30.0)) / 36.0;//0.652;
-			tempData[2] = (18.0 + std::sqrt(30.0)) / 36.0;//0.652;
-			tempData[3] = (18.0 - std::sqrt(30.0)) / 36.0;// 0.347;
-		}
-		for (size_t i = 0; i < points; ++i)
-		{
-			for (size_t j = 0; j < points; ++j)
-			{
-				this->wages.push_back(tempData[i] * tempData[j]);
-			}
-		}
-		delete tempData;
-
-		Eta = (getMatrixOfLocalTransformation(LocalType::ETA));
-		Ksi = (getMatrixOfLocalTransformation(LocalType::KSI));
-		Shape = (getMatrixOfLocalTransformation(LocalType::SHAPE));
-	}
-
+	
 	MatSPtr Solver::getMatrixOfLocalTransformation(LocalType type)
 	{
 		int noIntPoints = this->gaussIntegralScheme;
 		size_t size = std::pow(this->gaussIntegralScheme, 2);
 		auto matrix = std::make_shared<Matrix>(4, size);
-		std::vector<double> points= std::move(generateGaussIntegrationalPoints(noIntPoints)) ;
+		std::vector<double> points = std::move(this->iPoints.getDependingonScheme(this->gaussIntegralScheme));
 		switch (type) {
 		case LocalType::ETA: case LocalType::KSI: {
 			auto functions = localOperations.getFunctions(type);
@@ -96,11 +77,11 @@ namespace slv {
 					matrix->operator()(j, i) = functions.at(j)(points.at(i % noIntPoints));
 			}
 		}break;
-		case LocalType::SHAPE: {
+		case LocalType::SHAPE2D: {
 			for (size_t i = 0; i < size; i++)
 			{
 				for (size_t j = 0; j < 4; j++)
-					matrix->operator()(j, i) = (localOperations.Shape.at(j))(points.at(i % noIntPoints),
+					matrix->operator()(j, i) = (localOperations.Shape2D.at(j))(points.at(i % noIntPoints),
 						points.at(static_cast<int>(i/noIntPoints)));
 			}
 		}break;
@@ -195,10 +176,95 @@ namespace slv {
 			for (size_t j = 0; j < noMultipliers; j++) {
 				*buffer *= multipliers.at(j);
 			}
-			*buffer *= this->wages[i];
+			*buffer *= this->wagesTwoDim[i];
 			H->operator+=(*buffer);
 		}
 		return H;
+	}
+
+	MatUPtr Solver::getBoundaryMatrixForElement(double* X, double* Y, std::vector<double>& multipliers)
+	{
+		std::vector<MatUPtr> Hbc;
+		double HLen = Y[3] - Y[0];
+		double WLen = X[1] - X[0]; //can be stored somewhere else
+		double detW = (WLen *2.0);
+		double detH = (HLen *2.0);
+		const size_t noOneDShapeFunctions = this->gaussIntegralScheme;
+		auto points = iPoints.getDependingonScheme(noOneDShapeFunctions);
+		const size_t noMultipliers = multipliers.size();
+		if (X[0] == 0.0)
+		{
+			Hbc.push_back(std::make_unique<Matrix>(4));
+			for (size_t i = 0; i < noOneDShapeFunctions; i++)
+			{
+				auto vec = std::make_shared<Vector>(4);
+				vec->operator()(0) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
+				vec->operator()(3) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
+				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
+			}
+			for (size_t j = 0; j < noMultipliers; j++)
+			{
+				Hbc.back()->operator*=(multipliers.at(j));
+			}
+			Hbc.back()->operator*=(detH);
+		}
+		if (std::abs(X[1]- this->WBound) <0.000001)
+		{
+			Hbc.push_back(std::make_unique<Matrix>(4));
+			for (size_t i = 0; i < noOneDShapeFunctions; i++)
+			{
+				auto vec = std::make_shared<Vector>(4);
+				vec->operator()(1) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
+				vec->operator()(2) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
+				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
+			}
+			for (size_t j = 0; j < noMultipliers; j++)
+			{
+				Hbc.back()->operator*=(multipliers.at(j));
+			}
+			Hbc.back()->operator*=(detH);
+		}
+		if (Y[0] == 0.0)
+		{
+			Hbc.push_back(std::make_unique<Matrix>(4));
+			for (size_t i = 0; i < noOneDShapeFunctions; i++)
+			{
+				auto vec = std::make_shared<Vector>(4);
+				vec->operator()(0) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
+				vec->operator()(1) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
+				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
+			}
+			for (size_t j = 0; j < noMultipliers; j++)
+			{
+				Hbc.back()->operator*=(multipliers.at(j));
+			}
+			Hbc.back()->operator*=(detW);
+			std::cout << "y=0\n" << *Hbc.back() << std::endl;
+		}
+		if (std::abs(Y[3] -HBound)<0.000001)
+		{
+			Hbc.push_back(std::make_unique<Matrix>(4));
+			for (size_t i = 0; i < noOneDShapeFunctions; i++)
+			{
+				auto vec = std::make_shared<Vector>(4);
+				vec->operator()(2) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
+				vec->operator()(3) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
+				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
+			}
+			for (size_t j = 0; j < noMultipliers; j++)
+			{
+				Hbc.back()->operator*=(multipliers.at(j));
+			}
+			Hbc.back()->operator*=(detW);
+			std::cout << "y=w\n" << *Hbc.back() << std::endl;
+		}
+		const size_t size = Hbc.size();
+		auto result = std::make_unique<Matrix>(4);
+		for (size_t i = 0; i < size; i++)
+		{
+			result->operator += (*Hbc[i]);
+		}
+		return result;
 	}
 
 	void Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<MatUPtr>& locals, std::vector<std::array<int, 4>>& nodes)
