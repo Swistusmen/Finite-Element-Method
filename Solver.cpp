@@ -7,6 +7,8 @@
 #include <array>
 #include "InputData.h"
 
+#define Epsilon 0.000001
+
 namespace {
 	std::vector<double> getWagesOneDimension(int scheme)
 	{
@@ -150,7 +152,7 @@ namespace slv {
 			auto result = getXYDerivativesForPoint(jacoby, point);
 			auto H1 = vecAndvecTMultiplication(*result[0]);
 			auto H2 = vecAndvecTMultiplication(*result[0]); //?????????????????
-			//delete result;
+			
 			*mat = H1->operator+= (*H2);
 		}
 		else if (type == MatrixType::C) {
@@ -158,7 +160,7 @@ namespace slv {
 			for (size_t i = 0; i < 4; i++) {
 				vec->operator()(i)=Shape->operator()(i, point);
 			}
-			mat = std::move(vecAndvecTMultiplication(*vec));// dostan wektor funkcji ksztaltu dla punktu
+			mat = std::move(vecAndvecTMultiplication(*vec));
 		}
 		*mat *= detJ;
 		return mat;
@@ -182,82 +184,41 @@ namespace slv {
 		return H;
 	}
 
+	MatUPtr Solver::getBoundaryMatrixForSide(std::array<int, 4> config, double det, std::vector<double>& multipliers)
+	{
+		const size_t noOneDShapeFunctions = this->gaussIntegralScheme;
+		const size_t noMultipliers = multipliers.size();
+		auto Hbc= std::make_unique<Matrix>(4);
+		auto points = iPoints.getDependingonScheme(noOneDShapeFunctions);
+		for (size_t i = 0; i < noOneDShapeFunctions; i++)
+		{
+			auto vec = std::make_shared<Vector>(4);
+			vec->operator()(config.at(0)) += 0.5*localOperations.Shape1D.at(config.at(2))(points.at(i));
+			vec->operator()(config.at(1)) += 0.5*localOperations.Shape1D.at(config.at(3))(points.at(i));
+			Hbc->operator+=(*vecAndvecTMultiplication(*vec));
+		}
+		for (size_t j = 0; j < noMultipliers; j++)
+		{
+			Hbc->operator*=(multipliers.at(j));
+		}
+		Hbc->operator*=(det);
+		return Hbc;
+	}
+
 	MatUPtr Solver::getBoundaryMatrixForElement(double* X, double* Y, std::vector<double>& multipliers)
 	{
 		std::vector<MatUPtr> Hbc;
-		double HLen = Y[3] - Y[0];
-		double WLen = X[1] - X[0]; //can be stored somewhere else
-		double detW = (WLen *2.0);
-		double detH = (HLen *2.0);
-		const size_t noOneDShapeFunctions = this->gaussIntegralScheme;
-		auto points = iPoints.getDependingonScheme(noOneDShapeFunctions);
-		const size_t noMultipliers = multipliers.size();
+		double detW = ((X[1] - X[0]) *2.0);
+		double detH = ((Y[3] - Y[0]) *2.0);
+
 		if (X[0] == 0.0)
-		{
-			Hbc.push_back(std::make_unique<Matrix>(4));
-			for (size_t i = 0; i < noOneDShapeFunctions; i++)
-			{
-				auto vec = std::make_shared<Vector>(4);
-				vec->operator()(0) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
-				vec->operator()(3) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
-				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
-			}
-			for (size_t j = 0; j < noMultipliers; j++)
-			{
-				Hbc.back()->operator*=(multipliers.at(j));
-			}
-			Hbc.back()->operator*=(detH);
-		}
-		if (std::abs(X[1]- this->WBound) <0.000001)
-		{
-			Hbc.push_back(std::make_unique<Matrix>(4));
-			for (size_t i = 0; i < noOneDShapeFunctions; i++)
-			{
-				auto vec = std::make_shared<Vector>(4);
-				vec->operator()(1) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
-				vec->operator()(2) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
-				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
-			}
-			for (size_t j = 0; j < noMultipliers; j++)
-			{
-				Hbc.back()->operator*=(multipliers.at(j));
-			}
-			Hbc.back()->operator*=(detH);
-		}
+			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Left, detW, multipliers)));
+		if (std::abs(X[1]- this->WBound) <Epsilon)
+			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Right, detW, multipliers)));
 		if (Y[0] == 0.0)
-		{
-			Hbc.push_back(std::make_unique<Matrix>(4));
-			for (size_t i = 0; i < noOneDShapeFunctions; i++)
-			{
-				auto vec = std::make_shared<Vector>(4);
-				vec->operator()(0) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
-				vec->operator()(1) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
-				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
-			}
-			for (size_t j = 0; j < noMultipliers; j++)
-			{
-				Hbc.back()->operator*=(multipliers.at(j));
-			}
-			Hbc.back()->operator*=(detW);
-			std::cout << "y=0\n" << *Hbc.back() << std::endl;
-		}
-		if (std::abs(Y[3] -HBound)<0.000001)
-		{
-			Hbc.push_back(std::make_unique<Matrix>(4));
-			for (size_t i = 0; i < noOneDShapeFunctions; i++)
-			{
-				auto vec = std::make_shared<Vector>(4);
-				vec->operator()(2) += 0.5*localOperations.Shape1D.at(1)(points.at(i));
-				vec->operator()(3) += 0.5*localOperations.Shape1D.at(0)(points.at(i));
-				Hbc.back()->operator+=(*vecAndvecTMultiplication(*vec));
-			}
-			for (size_t j = 0; j < noMultipliers; j++)
-			{
-				Hbc.back()->operator*=(multipliers.at(j));
-			}
-			Hbc.back()->operator*=(detW);
-			std::cout << "y=w\n" << *Hbc.back() << std::endl;
-		}
+			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Bottom, detH, multipliers)));
+		if (std::abs(Y[3] -HBound)<Epsilon)
+			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Top, detH, multipliers)));
 		const size_t size = Hbc.size();
 		auto result = std::make_unique<Matrix>(4);
 		for (size_t i = 0; i < size; i++)

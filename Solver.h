@@ -29,6 +29,8 @@ namespace slv {
 		MatUPtr getMatrixForPoint(MatrixType type,  double* X, double*Y, int point);
 		MatUPtr getMatrixForElement(MatrixType type, double*X, double*Y, 
 			std::vector<double>& multipliers);
+
+		MatUPtr getBoundaryMatrixForSide(std::array<int, 4> config, double det, std::vector<double>& multipliers);
 		MatUPtr getBoundaryMatrixForElement(double* X, double* Y, std::vector<double>& multipliers);
 		
 		void aggregateGlobalMatrix(Matrix& mat, std::vector<MatUPtr>& locals, std::vector<std::array<int, 4>>& nodes);
@@ -39,6 +41,7 @@ namespace slv {
 		std::vector<double> wagesOneDim;
 		std::vector<double> wagesTwoDim;
 		IntegrationalPoints iPoints;
+		BoundaryConditionConfuguration bCondition;
 
 		double HBound = -1.0;
 		double WBound = -1.0;

@@ -4,6 +4,7 @@
 #include <utility>
 #include <memory>
 #include <functional>
+#include <array>
 
 namespace slv {
 	enum LocalType { ETA, KSI, SHAPE2D, SHAPE1D };
@@ -61,4 +62,11 @@ namespace slv {
 		}
 	};
 
+	struct BoundaryConditionConfuguration
+	{
+		std::array<int, 4> Left= { 0,3,0,1 } ;
+		std::array<int, 4> Right=  {1,2,1,0 } ;
+		std::array<int, 4> Bottom= { 0,1,0,1 } ;
+		std::array<int, 4> Top= { 2,3,1,0 } ;
+	};
 }

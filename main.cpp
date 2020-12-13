@@ -11,11 +11,10 @@
 #include <array>
 #include <cmath>
 
-//TODO make copy and move assignment for matrix and vector class
 
 int main()
 {
-	int scheme = 2;
+	int scheme = 4;
 	slv::LocalOperations localOperations;
 	slv::IntegrationalPoints integrationalPoints;
 
@@ -36,17 +35,15 @@ int main()
 	std::vector<double> CMultipliers;
 	CMultipliers.push_back(700.0);
 	CMultipliers.push_back(7800.0);
-	std::vector<double> HbcMultipliers;
-	HbcMultipliers.push_back(25.0);
+	
 	for (int i = 1; i <= size; i++)
 	{
-		localHMatricies.push_back(std::move(solver.getMatrixForElement(slv::MatrixType::H, mesh.getX(i),mesh.getY(i), HMultipliers)));
-		localCMatricies.push_back(std::move(solver.getMatrixForElement(slv::MatrixType::C, mesh.getX(i), mesh.getY(i), CMultipliers)));
-		std::cout << "Element " << i << std::endl;
-		auto d = solver.getBoundaryMatrixForElement(mesh.getX(i), mesh.getY(i), HbcMultipliers);
-		//std::cout << *d << std::endl;
+		double *X = mesh.getX(i); //need to be refactiored, can be std::array<double,4>
+		double *Y = mesh.getY(i);
+		localHMatricies.push_back(std::move(solver.getMatrixForElement(slv::MatrixType::H, X,Y, HMultipliers)));
+		localHMatricies.back()->operator+=(*(solver.getBoundaryMatrixForElement(X, Y, HMultipliers)));
+		localCMatricies.push_back(std::move(solver.getMatrixForElement(slv::MatrixType::C, X, Y, CMultipliers)));
 		nodes.push_back(mesh.getElementNodesIndexes(i));
-		//std::cout << *localCMatricies.back() << std::endl;
 	}
 	int sizeOfGlobalMatrix = mesh.getNH()*mesh.getNW();
 	Matrix globalHMat(sizeOfGlobalMatrix);
