@@ -32,8 +32,12 @@ namespace slv {
 
 		MatUPtr getBoundaryMatrixForSide(std::array<int, 4> config, double det, std::vector<double>& multipliers);
 		MatUPtr getBoundaryMatrixForElement(double* X, double* Y, std::vector<double>& multipliers);
+
+		VecUPtr getPreassureVectorForSide(std::array<int, 4> config, double det, std::vector<double>& multipliers);
+		VecUPtr getPreassureVectorForElement(double* X, double* Y, std::vector<double>& multipliers);
 		
 		void aggregateGlobalMatrix(Matrix& mat, std::vector<MatUPtr>& locals, std::vector<std::array<int, 4>>& nodes);
+		void aggregateGlobalVector(Vector& vec, std::vector<VecUPtr>& locals, std::vector<std::array<int, 4>>& nodes);
 	private:
 		int gaussIntegralScheme;
 		LocalOperations localOperations;

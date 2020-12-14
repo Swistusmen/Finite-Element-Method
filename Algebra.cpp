@@ -304,6 +304,24 @@
 		return this->tab[i];
 	}
 
+	Vector& Vector::operator+=(Vector& mat)
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			this->tab.at(i) += mat.tab.at(i);
+		}
+		return *this;
+	}
+
+	Vector& Vector::operator*=(double scalar)
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			this->tab.at(i) *= scalar;
+		}
+		return *this;
+	}
+
 	Vector& Vector::operator=(Vector& vec)
 	{
 		const size_t size = vec.tab.size();

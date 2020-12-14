@@ -39,6 +39,8 @@
 		Vector(const Vector& vec);
 
 		Vector& operator=(Vector& vec);
+		Vector& operator+=(Vector& mat);
+		Vector& operator*=(double scalar);
 		friend std::unique_ptr<Vector> operator+ (Vector& a, Vector& b);
 		friend std::ostream& operator<< (std::ostream& os, const Vector& vec);
 		friend std::unique_ptr<Matrix> vecAndvecTMultiplication(Vector& a);

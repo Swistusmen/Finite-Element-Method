@@ -213,11 +213,11 @@ namespace slv {
 
 		if (X[0] == 0.0)
 			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Left, detW, multipliers)));
-		if (std::abs(X[1]- this->WBound) <Epsilon)
+		if (std::abs(X[1] - this->WBound) < Epsilon)
 			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Right, detW, multipliers)));
 		if (Y[0] == 0.0)
 			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Bottom, detH, multipliers)));
-		if (std::abs(Y[3] -HBound)<Epsilon)
+		if (std::abs(Y[3] - HBound) < Epsilon)
 			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Top, detH, multipliers)));
 		const size_t size = Hbc.size();
 		auto result = std::make_unique<Matrix>(4);
@@ -226,6 +226,48 @@ namespace slv {
 			result->operator += (*Hbc[i]);
 		}
 		return result;
+	}
+
+	VecUPtr Solver::getPreassureVectorForSide(std::array<int, 4> config, double det, std::vector<double>& multipliers)
+	{
+		const size_t noOneDShapeFunctions = this->gaussIntegralScheme;
+		const size_t noMultipliers = multipliers.size();
+		auto Vec = std::make_unique<Vector>(4);
+		auto points = iPoints.getDependingonScheme(noOneDShapeFunctions);
+		for (size_t i = 0; i < noOneDShapeFunctions; i++)
+		{
+			Vec->operator()(config.at(0)) += 0.5*localOperations.Shape1D.at(config.at(2))(points.at(i));
+			Vec->operator()(config.at(1)) += 0.5*localOperations.Shape1D.at(config.at(3))(points.at(i));
+		}
+		for (size_t j = 0; j < noMultipliers; j++)
+		{
+			Vec->operator*=(multipliers.at(j));
+		}
+		Vec->operator*=(det);
+		return Vec;
+	}
+
+	VecUPtr Solver::getPreassureVectorForElement(double* X, double* Y, std::vector<double>& multipliers)
+	{
+		auto Hbc = std::make_unique<Vector>(4);
+		double detW = ((X[1] - X[0]) *2.0/100); //check correctness of this
+		double detH = ((Y[3] - Y[0]) *2.0/100);
+
+		if (X[0] == 0.0) {
+			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Left, detW, multipliers)));
+		}
+		if (std::abs(X[1] - this->WBound) < Epsilon) {
+			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Right, detW, multipliers)));
+		}
+		if (Y[0] == 0.0) {
+			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Bottom, detW, multipliers)));
+		}
+		if (std::abs(Y[3] - HBound) < Epsilon) {
+			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Top, detW, multipliers)));
+		}
+		Hbc->operator*=(-1.0);//it's from the formula specific to the fourier equation (q=alfa(t-t*alfa))
+		
+		return Hbc;
 	}
 
 	void Solver::aggregateGlobalMatrix(Matrix& mat, std::vector<MatUPtr>& locals, std::vector<std::array<int, 4>>& nodes)
@@ -241,6 +283,21 @@ namespace slv {
 				{
 					mat(curNo.at(j) - 1, curNo.at(c) - 1) += cur(j, c);
 				}
+			}
+		}
+	}
+
+	void Solver::aggregateGlobalVector(Vector& vec, std::vector<VecUPtr>& locals, std::vector<std::array<int, 4>>& nodes)
+	{
+		const size_t numberOfLocals = locals.size();
+		for (size_t i = 0; i < numberOfLocals; i++)
+		{
+			auto& cur = *locals[i];
+			std::cout << cur << std::endl;
+			std::array<int, 4>& curNo = nodes[i];
+			for (int j = 0; j < 4; j++)
+			{
+					vec(curNo.at(j) - 1) += cur(j);
 			}
 		}
 	}
