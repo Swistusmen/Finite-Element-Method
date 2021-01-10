@@ -1,7 +1,7 @@
-4 4 0.1 0.1 #rectangle mesh- nH nW H W#
+31 31 0.1 0.1 #rectangle mesh- nH nW H W#
 25.0 #H matrix multipliers#
 300.0 #HBC preassure- new added#
 700.0 7800.0 #C matrix multipliers#
 1200.0 300.0 25.0 #preassure multipliers#
 100.0 #t0#
-500.0 50.0 #timeOfExperiment, timeStamp#
+100.0 1.0 #timeOfExperiment, timeStamp#
