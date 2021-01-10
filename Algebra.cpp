@@ -247,6 +247,23 @@
 		return newMat;
 	}
 
+	std::unique_ptr<Vector> Matrix::multiply(Matrix& mat, Vector& vec)
+	{
+		const size_t sizeOfVec = vec.tab.size();
+		const auto sizeOfMatrix = mat.getSize();
+		if (sizeOfVec != sizeOfMatrix.first)
+			return nullptr;
+		auto result=std::make_unique<Vector>(sizeOfVec);
+		for (size_t i = 0; i < sizeOfMatrix.first; i++)
+		{
+			for (size_t j = 0; j < sizeOfMatrix.second; j++)
+			{
+				result->operator()(i) += vec(j)*mat(j, i);
+			}
+		}
+		return result;
+	}
+
 	double determinantMat2(Matrix& mat)
 	{
 		auto size = mat.getSize();
@@ -275,6 +292,17 @@
 		mat(0, 1) = mat(1, 0) / det;
 		mat(1, 0) = mat(0, 1) / det;
 
+	}
+
+	void Matrix::abs()
+	{
+		for (size_t i = 0; i < sizeH; i++)
+		{
+			for (size_t j = 0; j < sizeW; j++)
+			{
+				this->tab.at(i).at(j) = std::abs(this->tab.at(i).at(j));
+			}
+		}
 	}
 	////////////////////////////////////////////////// Vector
 	Vector::Vector(double* data, const size_t size)
@@ -306,7 +334,8 @@
 
 	Vector& Vector::operator+=(Vector& mat)
 	{
-		for (size_t i = 0; i < 4; i++)
+		const size_t max = mat.tab.size();
+		for (size_t i = 0; i < max; i++)
 		{
 			this->tab.at(i) += mat.tab.at(i);
 		}
@@ -315,7 +344,8 @@
 
 	Vector& Vector::operator*=(double scalar)
 	{
-		for (size_t i = 0; i < 4; i++)
+		const size_t max = this->tab.size();
+		for (size_t i = 0; i < max; i++)
 		{
 			this->tab.at(i) *= scalar;
 		}
@@ -377,5 +407,42 @@
 		{
 			tab.push_back(0);
 		}
+	}
+
+	void Vector::fullFill(double value)
+	{
+		const size_t size = this->tab.size();
+		for (size_t i = 0; i < size; i++)
+		{
+			this->tab.at(i) = value;
+		}
+	}
+
+	std::unique_ptr<Vector> operator*(Vector& vec, Matrix& mat)
+	{
+		const size_t sizeOfVec = vec.tab.size();
+		const auto sizeOfMatrix = mat.getSize();
+		if (sizeOfVec != sizeOfMatrix.first)
+			return nullptr;
+		auto result = std::make_unique<Vector>(sizeOfMatrix.second);
+		for (size_t i = 0; i < sizeOfMatrix.first; i++)
+		{
+			for (size_t j = 0; j < sizeOfMatrix.second; j++)
+			{
+				result->operator()(i) += vec(j)*mat(i, j);
+			}
+		}
+		return std::move(result);
+	}
+
+	Vector& Vector::operator=(std::unique_ptr<Vector> vec)
+	{
+		this->tab = std::move(vec->tab);
+		return *this;
+	}
+
+	Vector::Vector(std::unique_ptr<Vector> vec)
+	{
+		this->tab = std::move(vec->tab);
 	}
 

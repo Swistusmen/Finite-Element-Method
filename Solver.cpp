@@ -6,6 +6,7 @@
 #include <vector>
 #include <array>
 #include "InputData.h"
+#include "AlgebraicOperations.h"
 
 #define Epsilon 0.000001
 
@@ -132,7 +133,8 @@ namespace slv {
 		for (int i = 0; i < 4; i++)
 		{
 			auto mat=std::make_unique<Matrix>(*jacoby);
-			inverseMat2(*mat);
+			//inverseMat2(*mat);
+			gjInverseMatrix(mat);
 			auto vec = this->getVectorOfDerivatives( i, point);
 			auto buffer = this->getDerivativeOfNByCoordinate_XY(*mat, determinantMat2(*jacoby),vec);
 			xy[0]->operator()(i) = (*buffer)(0);
@@ -151,8 +153,7 @@ namespace slv {
 		if (type == MatrixType::H) {
 			auto result = getXYDerivativesForPoint(jacoby, point);
 			auto H1 = vecAndvecTMultiplication(*result[0]);
-			auto H2 = vecAndvecTMultiplication(*result[0]); //?????????????????
-			
+			auto H2 = vecAndvecTMultiplication(*result[1]); 
 			*mat = H1->operator+= (*H2);
 		}
 		else if (type == MatrixType::C) {
@@ -193,13 +194,13 @@ namespace slv {
 		for (size_t i = 0; i < noOneDShapeFunctions; i++)
 		{
 			auto vec = std::make_shared<Vector>(4);
-			vec->operator()(config.at(0)) += 0.5*localOperations.Shape1D.at(config.at(2))(points.at(i));
-			vec->operator()(config.at(1)) += 0.5*localOperations.Shape1D.at(config.at(3))(points.at(i));
+			vec->operator()(config.at(0)) +=0.5*localOperations.Shape1D.at(config.at(2))(points.at(i));
+			vec->operator()(config.at(1)) +=0.5*localOperations.Shape1D.at(config.at(3))(points.at(i));
 			Hbc->operator+=(*vecAndvecTMultiplication(*vec));
 		}
 		for (size_t j = 0; j < noMultipliers; j++)
 		{
-			Hbc->operator*=(multipliers.at(j));
+			Hbc->operator*= (multipliers.at(j));
 		}
 		Hbc->operator*=(det);
 		return Hbc;
@@ -210,7 +211,6 @@ namespace slv {
 		std::vector<MatUPtr> Hbc;
 		double detW = ((X[1] - X[0]) *2.0);
 		double detH = ((Y[3] - Y[0]) *2.0);
-
 		if (X[0] == 0.0)
 			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Left, detW, multipliers)));
 		if (std::abs(X[1] - this->WBound) < Epsilon)
@@ -250,8 +250,8 @@ namespace slv {
 	VecUPtr Solver::getPreassureVectorForElement(double* X, double* Y, std::vector<double>& multipliers)
 	{
 		auto Hbc = std::make_unique<Vector>(4);
-		double detW = ((X[1] - X[0]) *2.0/100); //check correctness of this
-		double detH = ((Y[3] - Y[0]) *2.0/100);
+		double detW = ((X[1] - X[0]) *4.0  /100 ); //check correctness of this
+		double detH = ((Y[3] - Y[0]) *4.0  /100 );
 
 		if (X[0] == 0.0) {
 			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Left, detW, multipliers)));
@@ -265,8 +265,7 @@ namespace slv {
 		if (std::abs(Y[3] - HBound) < Epsilon) {
 			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Top, detW, multipliers)));
 		}
-		Hbc->operator*=(-1.0);//it's from the formula specific to the fourier equation (q=alfa(t-t*alfa))
-		
+		//Hbc->operator*=(-1.0);//it's from the formula specific to the fourier equation (q=alfa(t-t*alfa))
 		return Hbc;
 	}
 
@@ -293,7 +292,6 @@ namespace slv {
 		for (size_t i = 0; i < numberOfLocals; i++)
 		{
 			auto& cur = *locals[i];
-			std::cout << cur << std::endl;
 			std::array<int, 4>& curNo = nodes[i];
 			for (int j = 0; j < 4; j++)
 			{
