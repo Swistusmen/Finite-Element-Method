@@ -25,7 +25,7 @@ int main()
 	data::RectangleMesh mesh(InputData.meshData);
 
 	slv::Solver solver(localOperations, integrationalPoints, scheme, InputData.meshData);
-
+	
 	const int size = mesh.maxIndexOfElement();
 
 	std::vector<slv::MatUPtr> localHMatricies;
@@ -48,7 +48,7 @@ int main()
 
 	for (int i = 1; i <= size; i++)
 	{
-		double *X = mesh.getX(i); //need to be refactiored, can be std::array<double,4>
+		double *X = mesh.getX(i); //need to be refactored, can be std::array<double,4>
 		double *Y = mesh.getY(i);
 		localHMatricies.push_back(std::move(solver.getMatrixForElement(slv::MatrixType::H, X, Y, InputData.HMultipliers)));
 		localHMatricies.back()->operator+=(*(solver.getBoundaryMatrixForElement(X, Y, InputData.HBCMultipliers)));
@@ -58,10 +58,10 @@ int main()
 	}
 
 	solver.aggregateGlobalMatrix(globalHMat, localHMatricies, nodes);
-	std::cout << "H global\n" << globalHMat << std::endl;
+	//std::cout << "H global\n" << globalHMat << std::endl;
 
 	solver.aggregateGlobalMatrix(globalCMat, localCMatricies, nodes);
-	std::cout << "C global\n" << globalCMat << std::endl;
+	//std::cout << "C global\n" << globalCMat << std::endl;
 
 	solver.aggregateGlobalVector(globalVecOfPreassure, preassures, nodes);
 
@@ -81,23 +81,23 @@ int main()
 		HPrim = HCurrent;
 		Matrix CCopy(Ccurrent);
 		HPrim += Ccurrent / InputData.experimentParameters[1];
+		std::cout << "HPrim\n"<<HPrim << std::endl;
 
 		CCopy *= 1.0 / InputData.experimentParameters[1];
 		PPrim = CCopy.multiply(CCopy, t0);
 		PPrim += globalVecOfPreassure;
-		//std::cout << "PPrim\n" << PPrim << std::endl;
+		std::cout << "PPrim\n" << PPrim << std::endl;
 
 		//solve set of equations
 		solveJacobiEquation(PPrim, HPrim, t0);
 		auto MinMax = std::minmax_element(t0.tab.begin(), t0.tab.end());
-		std::cout << *MinMax.first << " " << *MinMax.second << std::endl;
 		MinMaxTemperatures.push_back({ *MinMax.first ,*MinMax.second });
 	}
 	for (int c = 0; c < iterations; c++)
 	{
 		std::cout << MinMaxTemperatures[c].first << " " << MinMaxTemperatures[c].second << std::endl;
 	}
-
+	fs::generateOutput(MinMaxTemperatures, "generatedOutput.txt");
 	system("pause");
 	return 0;
 }

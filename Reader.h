@@ -92,5 +92,22 @@ namespace fs {
 		return inputArguments;
 	}
 
+	void generateOutput(std::vector<std::pair<double, double>> MinMax, std::string filename)
+	{
+		std::ofstream file;
+		const size_t noMeasures = MinMax.size();
+		file.open(filename, std::ofstream::out);
+		if (file.is_open()) {
+			{
+				for (size_t i = 0; i < noMeasures; i++)
+				{
+					file << i + 1 << " " << MinMax.at(i).first << " " << MinMax.at(i).second << "\n";
+				}
+			}
+			file.close();
+			return;
+		}
+		std::cout << "Could not open a file\n";
+	}
 }
 	

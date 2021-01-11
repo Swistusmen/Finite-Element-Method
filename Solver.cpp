@@ -63,6 +63,9 @@ namespace slv {
 		this->Eta = (getMatrixOfLocalTransformation(LocalType::ETA));
 		this->Ksi = (getMatrixOfLocalTransformation(LocalType::KSI));
 		this->Shape = (getMatrixOfLocalTransformation(LocalType::SHAPE2D));
+
+		std::cout <<"Eta matrix\n"<< *Eta << std::endl;
+		std::cout << "Ksi matrix\n" << *Ksi << std::endl;
 	}
 	
 	MatSPtr Solver::getMatrixOfLocalTransformation(LocalType type)
@@ -198,10 +201,12 @@ namespace slv {
 			vec->operator()(config.at(1)) +=0.5*localOperations.Shape1D.at(config.at(3))(points.at(i));
 			Hbc->operator+=(*vecAndvecTMultiplication(*vec));
 		}
+		
 		for (size_t j = 0; j < noMultipliers; j++)
 		{
-			Hbc->operator*= (multipliers.at(j));
+			Hbc->operator*=  (multipliers.at(j));
 		}
+		
 		Hbc->operator*=(det);
 		return Hbc;
 	}
@@ -209,8 +214,8 @@ namespace slv {
 	MatUPtr Solver::getBoundaryMatrixForElement(double* X, double* Y, std::vector<double>& multipliers)
 	{
 		std::vector<MatUPtr> Hbc;
-		double detW = ((X[1] - X[0]) *2.0);
-		double detH = ((Y[3] - Y[0]) *2.0);
+		double detW = ((X[1] - X[0]) / 2, 0);// *2.0);
+		double detH = ((Y[3] - Y[0]) / 2.0);// *2.0);  //
 		if (X[0] == 0.0)
 			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Left, detW, multipliers)));
 		if (std::abs(X[1] - this->WBound) < Epsilon)
@@ -251,7 +256,7 @@ namespace slv {
 	{
 		auto Hbc = std::make_unique<Vector>(4);
 		double detW = ((X[1] - X[0]) *4.0  /100 ); //check correctness of this
-		double detH = ((Y[3] - Y[0]) *4.0  /100 );
+		double detH = ((Y[3] - Y[0]) *4.0 / 100 );
 
 		if (X[0] == 0.0) {
 			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Left, detW, multipliers)));

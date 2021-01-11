@@ -1,11 +1,13 @@
-﻿  main.cpp
-c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\main.cpp(47): warning C4244: "inicjowanie": konwersja z "_Ty" do "int", możliwa utrata danych
-          with
-          [
-              _Ty=double
-          ]
+﻿  Solver.cpp
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(39): warning C4018: "<": niezgodność typu ze znakiem/bez znaku
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(41): warning C4018: "<": niezgodność typu ze znakiem/bez znaku
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(74): warning C4244: "inicjowanie": konwersja z "double" do "size_t", możliwa utrata danych
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(135): warning C4244: "inicjowanie": konwersja z "double" do "size_t", możliwa utrata danych
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(135): warning C4244: "inicjowanie": konwersja z "double" do "const size_t", możliwa utrata danych
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(176): warning C4244: "inicjowanie": konwersja z "double" do "int", możliwa utrata danych
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(176): warning C4244: "inicjowanie": konwersja z "double" do "const int", możliwa utrata danych
   Trwa generowanie kodu
-  1 of 1449 functions (<0.1%) were compiled, the rest were copied from previous compilation.
+  2 of 1478 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
     1 functions had inline decision re-evaluated but remain unchanged
   Zakończono generowanie kodu
