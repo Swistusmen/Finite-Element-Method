@@ -136,7 +136,6 @@ namespace slv {
 		for (int i = 0; i < 4; i++)
 		{
 			auto mat=std::make_unique<Matrix>(*jacoby);
-			//inverseMat2(*mat);
 			gjInverseMatrix(mat);
 			auto vec = this->getVectorOfDerivatives( i, point);
 			auto buffer = this->getDerivativeOfNByCoordinate_XY(*mat, determinantMat2(*jacoby),vec);
@@ -194,19 +193,20 @@ namespace slv {
 		const size_t noMultipliers = multipliers.size();
 		auto Hbc= std::make_unique<Matrix>(4);
 		auto points = iPoints.getDependingonScheme(noOneDShapeFunctions);
+		auto wages = getWagesOneDimension(noOneDShapeFunctions);
 		for (size_t i = 0; i < noOneDShapeFunctions; i++)
 		{
 			auto vec = std::make_shared<Vector>(4);
-			vec->operator()(config.at(0)) +=0.5*localOperations.Shape1D.at(config.at(2))(points.at(i));
-			vec->operator()(config.at(1)) +=0.5*localOperations.Shape1D.at(config.at(3))(points.at(i));
-			Hbc->operator+=(*vecAndvecTMultiplication(*vec));
+			vec->operator()(config.at(0)) +=localOperations.Shape1D.at(config.at(2))(points.at(i));
+			vec->operator()(config.at(1)) +=localOperations.Shape1D.at(config.at(3))(points.at(i));
+			auto temp = vecAndvecTMultiplication(*vec);
+			temp->operator*=(wages[i]);
+			Hbc->operator+=(*temp);
 		}
-		
 		for (size_t j = 0; j < noMultipliers; j++)
 		{
 			Hbc->operator*=  (multipliers.at(j));
 		}
-		
 		Hbc->operator*=(det);
 		return Hbc;
 	}
@@ -214,8 +214,8 @@ namespace slv {
 	MatUPtr Solver::getBoundaryMatrixForElement(double* X, double* Y, std::vector<double>& multipliers)
 	{
 		std::vector<MatUPtr> Hbc;
-		double detW = ((X[1] - X[0]) / 2, 0);// *2.0);
-		double detH = ((Y[3] - Y[0]) / 2.0);// *2.0);  //
+		double detW = (X[1] - X[0]) / 2.0;
+		double detH = (Y[3] - Y[0]) / 2.0; //tu
 		if (X[0] == 0.0)
 			Hbc.push_back(std::move(this->getBoundaryMatrixForSide(bCondition.Left, detW, multipliers)));
 		if (std::abs(X[1] - this->WBound) < Epsilon)
@@ -241,34 +241,41 @@ namespace slv {
 		auto points = iPoints.getDependingonScheme(noOneDShapeFunctions);
 		for (size_t i = 0; i < noOneDShapeFunctions; i++)
 		{
-			Vec->operator()(config.at(0)) += 0.5*localOperations.Shape1D.at(config.at(2))(points.at(i));
-			Vec->operator()(config.at(1)) += 0.5*localOperations.Shape1D.at(config.at(3))(points.at(i));
+			Vec->operator()(config.at(0)) += localOperations.Shape1D.at(config.at(2))(points.at(i));
+			Vec->operator()(config.at(1)) += localOperations.Shape1D.at(config.at(3))(points.at(i));
 		}
 		for (size_t j = 0; j < noMultipliers; j++)
 		{
 			Vec->operator*=(multipliers.at(j));
 		}
-		Vec->operator*=(det);
 		return Vec;
 	}
 
 	VecUPtr Solver::getPreassureVectorForElement(double* X, double* Y, std::vector<double>& multipliers)
 	{
 		auto Hbc = std::make_unique<Vector>(4);
-		double detW = ((X[1] - X[0]) *4.0  /100 ); //check correctness of this
-		double detH = ((Y[3] - Y[0]) *4.0 / 100 );
+		double detW = ((X[1] - X[0]) / 2.0);//check correctness of this
+		double detH = ((Y[3] - Y[0]) / 2.0);
 
 		if (X[0] == 0.0) {
-			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Left, detW, multipliers)));
+			auto temp = *(getPreassureVectorForSide(bCondition.Left, detW, multipliers));
+			temp *= detW;
+			Hbc->operator+=(temp);
 		}
 		if (std::abs(X[1] - this->WBound) < Epsilon) {
-			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Right, detW, multipliers)));
+			auto temp = *(getPreassureVectorForSide(bCondition.Right, detW, multipliers));
+			temp *= detW;
+			Hbc->operator+=(temp);
 		}
 		if (Y[0] == 0.0) {
-			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Bottom, detW, multipliers)));
+			auto temp = *(getPreassureVectorForSide(bCondition.Bottom, detH, multipliers));
+			temp *= detH;
+			Hbc->operator+=(temp);
 		}
 		if (std::abs(Y[3] - HBound) < Epsilon) {
-			Hbc->operator+=(*(getPreassureVectorForSide(bCondition.Top, detW, multipliers)));
+			auto temp = *(getPreassureVectorForSide(bCondition.Top, detH, multipliers));
+			temp *= detH;
+			Hbc->operator+=(temp);
 		}
 		//Hbc->operator*=(-1.0);//it's from the formula specific to the fourier equation (q=alfa(t-t*alfa))
 		return Hbc;

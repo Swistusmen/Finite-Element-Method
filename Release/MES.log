@@ -4,11 +4,11 @@ c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(41): w
 c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(74): warning C4244: "inicjowanie": konwersja z "double" do "size_t", możliwa utrata danych
 c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(135): warning C4244: "inicjowanie": konwersja z "double" do "size_t", możliwa utrata danych
 c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(135): warning C4244: "inicjowanie": konwersja z "double" do "const size_t", możliwa utrata danych
-c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(176): warning C4244: "inicjowanie": konwersja z "double" do "int", możliwa utrata danych
-c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(176): warning C4244: "inicjowanie": konwersja z "double" do "const int", możliwa utrata danych
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(175): warning C4244: "inicjowanie": konwersja z "double" do "int", możliwa utrata danych
+c:\users\micha\desktop\programowanie\cpp-prog\normalne\mes\mes\solver.cpp(175): warning C4244: "inicjowanie": konwersja z "double" do "const int", możliwa utrata danych
   Trwa generowanie kodu
-  2 of 1478 functions ( 0.1%) were compiled, the rest were copied from previous compilation.
+  3 of 1483 functions ( 0.2%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    1 functions had inline decision re-evaluated but remain unchanged
+    12 functions had inline decision re-evaluated but remain unchanged
   Zakończono generowanie kodu
   MES.vcxproj -> C:\Users\micha\Desktop\Programowanie\Cpp-prog\normalne\MES\Release\MES.exe

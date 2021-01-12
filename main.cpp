@@ -58,10 +58,10 @@ int main()
 	}
 
 	solver.aggregateGlobalMatrix(globalHMat, localHMatricies, nodes);
-	//std::cout << "H global\n" << globalHMat << std::endl;
+	std::cout << "H+Hbc global\n" << globalHMat << std::endl;
 
 	solver.aggregateGlobalMatrix(globalCMat, localCMatricies, nodes);
-	//std::cout << "C global\n" << globalCMat << std::endl;
+	std::cout << "C global\n" << globalCMat << std::endl;
 
 	solver.aggregateGlobalVector(globalVecOfPreassure, preassures, nodes);
 
@@ -81,12 +81,10 @@ int main()
 		HPrim = HCurrent;
 		Matrix CCopy(Ccurrent);
 		HPrim += Ccurrent / InputData.experimentParameters[1];
-		std::cout << "HPrim\n"<<HPrim << std::endl;
 
 		CCopy *= 1.0 / InputData.experimentParameters[1];
 		PPrim = CCopy.multiply(CCopy, t0);
 		PPrim += globalVecOfPreassure;
-		std::cout << "PPrim\n" << PPrim << std::endl;
 
 		//solve set of equations
 		solveJacobiEquation(PPrim, HPrim, t0);
